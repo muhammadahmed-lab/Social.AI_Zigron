@@ -791,8 +791,9 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.2);
-    overflow: hidden;
+    overflow-y: auto;
     position: relative;
+    min-height: 300px;
 }
 
 .preview-empty {
@@ -823,11 +824,10 @@
 
 .image-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-    padding: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem;
     width: 100%;
-    height: 100%;
     overflow-y: auto;
     align-content: flex-start;
 }
@@ -835,24 +835,23 @@
 /* Image Results & Actions */
 .image-result {
     position: relative;
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    aspect-ratio: 1/1;
+    transition: all 0.3s ease;
 }
 
 .image-result:hover {
-    transform: translateY(-8px) scale(1.02);
+    transform: translateY(-4px);
     border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
 }
 
 .image-result img {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
+    display: block;
 }
 
 .image-actions {
