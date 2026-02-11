@@ -61,6 +61,7 @@ const Sidebar = ({ onNewChat, onClearHistory, chatSessions = [], isCollapsed, on
         {
             id: 'analytics',
             label: 'Analytics',
+            disabled: true,
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="20" x2="18" y2="10" />
@@ -72,6 +73,7 @@ const Sidebar = ({ onNewChat, onClearHistory, chatSessions = [], isCollapsed, on
         {
             id: 'social',
             label: 'Social Accounts',
+            disabled: true,
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 8A3 3 0 0 0 15 5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3V8Z" />
@@ -130,12 +132,18 @@ const Sidebar = ({ onNewChat, onClearHistory, chatSessions = [], isCollapsed, on
                 {navItems.map((item) => (
                     <button
                         key={item.id}
-                        className={`nav-item-btn ${activeItemId === item.id ? 'active' : ''}`}
-                        title={item.label}
-                        onClick={() => onNavigate(item.id)}
+                        className={`nav-item-btn ${activeItemId === item.id ? 'active' : ''} ${item.disabled ? 'disabled' : ''}`}
+                        title={item.disabled ? `${item.label} (Coming Soon)` : item.label}
+                        onClick={() => !item.disabled && onNavigate(item.id)}
+                        disabled={item.disabled}
                     >
                         {item.icon}
-                        {!isCollapsed && <span>{item.label}</span>}
+                        {!isCollapsed && (
+                            <span>
+                                {item.label}
+                                {item.disabled && <span className="coming-soon-tag">Soon</span>}
+                            </span>
+                        )}
                     </button>
                 ))}
             </nav>
