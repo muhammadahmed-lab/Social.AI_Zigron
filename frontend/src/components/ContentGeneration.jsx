@@ -99,8 +99,11 @@ const ContentGeneration = () => {
 
         setIsGenerating(true);
         try {
-            // Build final prompt including overlay text if provided
-            let finalPrompt = imagePrompt;
+            // Build final prompt: strip any old overlay instructions, then re-add only if overlay field has text
+            let finalPrompt = imagePrompt
+                .replace(/\n*IMPORTANT:\s*Add the following overlay text prominently on the image:\s*"[^"]*"/gi, '')
+                .replace(/\n*(?:overlay|text overlay|hook|headline)[:\s]*"[^"]*"/gi, '')
+                .trim();
             if (overlayText.trim()) {
                 finalPrompt += `\n\nIMPORTANT: Add the following overlay text prominently on the image: "${overlayText.trim()}"`;
             }
