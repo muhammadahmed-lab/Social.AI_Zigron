@@ -42,6 +42,11 @@ debug.log
 maintenance/
 .claude/
 
+# AI assistant instructions (local only)
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+
 # Credentials (keep these out of version control)
 credentials.json
 token.json
