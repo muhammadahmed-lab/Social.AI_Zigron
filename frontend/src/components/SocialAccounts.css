@@ -1,0 +1,128 @@
+.social-accounts-container {
+    padding: 2rem 3rem;
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background-color: #0d0d12;
+    color: #ffffff;
+}
+
+.social-header {
+    margin-bottom: 2.5rem;
+}
+
+.social-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.social-header p {
+    color: #9ca3af;
+    font-size: 1.1rem;
+}
+
+.accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.account-card {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.account-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.account-icon {
+    font-size: 2.5rem;
+}
+
+.account-info h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+}
+
+.account-handle {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-badge.connected {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.status-badge.disconnected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.account-actions button {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+}
+
+.api-config-section {
+    padding: 2rem;
+    border-left: 4px solid #6366f1;
+}
+
+.api-config-section h2 {
+    margin-bottom: 1rem;
+}
+
+.api-config-section p {
+    color: #9ca3af;
+    margin-bottom: 2rem;
+    max-width: 600px;
+}
+
+.config-meter {
+    max-width: 400px;
+}
+
+.meter-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #d1d5db;
+}
+
+.meter-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.meter-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #10b981);
+    border-radius: 4px;
+}

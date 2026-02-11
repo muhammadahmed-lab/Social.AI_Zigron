@@ -1,0 +1,1235 @@
+================================================================================
+    SOCIAL MEDIA AI AGENT - COMPLETE PROJECT DOCUMENTATION
+================================================================================
+    Version: 3.0.0-admin-panel
+    Last Updated: February 2026
+================================================================================
+
+
+TABLE OF CONTENTS
+-----------------
+  1.  Project Overview
+  2.  Architecture
+  3.  Tech Stack
+  4.  Directory Structure
+  5.  Environment Variables
+  6.  Database Schema (Supabase)
+  7.  Backend - Detailed Breakdown
+      7.1  Server Entry (index.js)
+      7.2  Controllers
+           7.2.1  agentController.js
+           7.2.2  adminController.js
+           7.2.3  chatController.js
+           7.2.4  contentController.js
+           7.2.5  companyController.js
+           7.2.6  fileController.js
+      7.3  Middleware
+           7.3.1  adminAuth.js
+      7.4  Services
+           7.4.1  unifiedAIService.js
+           7.4.2  aiService.js (OpenAI)
+           7.4.3  geminiService.js (Google GenAI)
+           7.4.4  researchService.js (Serper)
+  8.  Frontend - Detailed Breakdown
+      8.1  Entry Point & App Shell
+      8.2  Pages
+           8.2.1  Dashboard.jsx
+      8.3  Components
+           8.3.1  Onboarding.jsx (Registration & Login)
+           8.3.2  Sidebar.jsx
+           8.3.3  ChatInterface.jsx
+           8.3.4  Agents.jsx
+           8.3.5  AdminPanel.jsx
+           8.3.6  CompanyProfile.jsx
+           8.3.7  CreateCompany.jsx
+           8.3.8  CustomerProfile.jsx
+           8.3.9  ContentCalendar.jsx
+           8.3.10 ContentGeneration.jsx
+           8.3.11 SocialAccounts.jsx
+      8.4  Shared Components
+           8.4.1  ThinkingModal.jsx
+           8.4.2  PreviewModal.jsx
+           8.4.3  ThinkingIndicator.jsx
+           8.4.4  WorkerSelector.jsx
+           8.4.5  CompanySelector.jsx
+           8.4.6  Toast.jsx
+      8.5  Services
+           8.5.1  api.js
+           8.5.2  adminApi.js
+           8.5.3  supabase.js
+      8.6  Context
+           8.6.1  AuthContext.jsx
+      8.7  Configuration (config.js)
+  9.  Directives (AI Agent SOPs)
+      9.1  ai_orchestrator.md
+      9.2  icp_analyst.md
+      9.3  icp_problem_id.md
+      9.4  content_calendar.md
+      9.5  messaging_manager.md
+      9.6  visual_content_creator.md
+      9.7  Messaging Sub-Agents (A through J)
+      9.8  Legacy Directives
+ 10.  API Endpoints Reference
+ 11.  User Flows
+      11.1  Registration Flow
+      11.2  Login Flow
+      11.3  Agent Execution Flow
+      11.4  Chat / Orchestrator Flow
+      11.5  Content Generation Flow
+      11.6  Calendar Management Flow
+      11.7  Admin Panel Flow
+      11.8  User Agent Settings Flow
+ 12.  External Service Integrations
+ 13.  Current Status & Roadmap
+
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+Social Media AI Agent (MySentry.AI) is a multi-user, AI-powered SaaS platform
+for social media management. It helps businesses automate their social media
+strategy by using specialized AI agents to:
+
+  - Build deep Ideal Customer Profiles (ICPs)
+  - Identify customer pain points and market gaps
+  - Generate strategic content calendars (weekly or monthly)
+  - Create AI-generated visual content (images via Gemini/Imagen)
+  - Provide an intelligent chat orchestrator that synthesizes all brand data
+    into actionable marketing advice
+
+The platform features an Admin Panel for managing agent configurations,
+per-user agent customization with DB persistence, and a unified AI service
+that routes between OpenAI and Gemini with automatic fallback.
+
+
+================================================================================
+2. ARCHITECTURE
+================================================================================
+
+The project uses a standard client-server architecture:
+
+  FRONTEND (React SPA)
+  ----------------------
+  - React 19 single-page application served by Vite
+  - Handles user authentication, UI rendering, and state management
+  - Communicates with backend via REST API calls
+  - Also queries Supabase directly for login and profile fetching
+
+  BACKEND (Express API Server)
+  -----------------------------
+  - Node.js Express server exposing REST endpoints
+  - Unified AI service routes between OpenAI and Gemini with fallback
+  - DB-driven agent configs with in-memory cache (5-min TTL)
+  - Per-user agent overrides persisted in database
+  - Admin panel for config management and prompt playground
+  - Loads markdown prompt templates (directives/) and injects user context
+  - Handles web search enrichment, image generation, and database persistence
+  - Integrates OpenAI function calling for structured calendar modifications
+
+  DATABASE (Supabase)
+  ---------------------
+  - PostgreSQL-based cloud database via Supabase
+  - Tables: users, companies, company_files, company_calendars,
+    agent_configs, user_agent_overrides
+  - File storage via Supabase Storage bucket
+  - RLS disabled on custom tables (matching project pattern)
+
+  EXTERNAL SERVICES
+  -------------------
+  - OpenAI API: text generation, chat completions, tool/function calling
+  - Google Gemini / Imagen API: AI image + text generation
+  - Serper.dev: real-time web and image search
+
+
+================================================================================
+3. TECH STACK
+================================================================================
+
+  FRONTEND
+  --------
+  - React 19.2 (functional components, hooks)
+  - Vite 7.2 (build tool & dev server)
+  - Vanilla CSS (no CSS framework; custom glassmorphism dark theme)
+  - @react-oauth/google (Google OAuth integration)
+  - @supabase/supabase-js v2.91 (direct DB queries from frontend)
+  - jwt-decode (JWT token parsing)
+  - mammoth (DOCX parsing for admin playground)
+  - pdfjs-dist (PDF parsing for admin playground)
+
+  BACKEND
+  -------
+  - Node.js with Express 5.2
+  - OpenAI SDK v6.16 (GPT-4o for text generation & tool calling)
+  - @google/generative-ai v0.24 (Gemini/Imagen for image + text generation)
+  - @supabase/supabase-js v2.95 (database operations)
+  - Axios (HTTP client for Serper API)
+  - dotenv (environment variable management)
+  - multer v2 (file upload middleware)
+  - mammoth (DOCX text extraction)
+  - pdf-parse (PDF text extraction)
+  - CORS enabled
+
+  DATABASE
+  --------
+  - Supabase (PostgreSQL-based)
+  - Tables: users, companies, company_files, company_calendars,
+            agent_configs, user_agent_overrides
+  - Storage: company-files bucket
+
+  EXTERNAL APIS
+  -------------
+  - OpenAI API (GPT-4o) - text generation, chat completions, tool calling
+  - Google Gemini / Imagen API - image + text generation
+  - Serper.dev API - real-time web search & image search
+
+  DESIGN
+  ------
+  - Dark theme with glassmorphism effects
+  - Vibrant gradient accents (purple/green)
+  - Smooth CSS animations
+  - Mobile-first responsive design
+
+
+================================================================================
+4. DIRECTORY STRUCTURE
+================================================================================
+
+  project-root/
+  |
+  |-- .env                          # Environment variables (all API keys)
+  |-- .gitignore                    # Git ignore rules
+  |-- CLAUDE.md                     # AI agent instructions
+  |-- AGENTS.md                     # Mirror of CLAUDE.md
+  |-- GEMINI.md                     # Mirror of CLAUDE.md
+  |-- README.md                     # Project readme
+  |-- PROJECT_DOCUMENTATION.txt     # This file
+  |
+  |-- backend/
+  |   |-- index.js                  # Express server entry point & routes
+  |   |-- package.json              # Backend dependencies
+  |   |-- controllers/
+  |   |   |-- agentController.js    # Agent execution, config cache, user overrides
+  |   |   |-- adminController.js    # Admin panel CRUD & playground
+  |   |   |-- chatController.js     # Orchestrator chat with tool calling
+  |   |   |-- companyController.js  # Multi-company CRUD
+  |   |   |-- contentController.js  # Image generation endpoint
+  |   |   |-- fileController.js     # File upload/download/delete
+  |   |-- middleware/
+  |   |   |-- adminAuth.js          # Admin role verification middleware
+  |   |-- services/
+  |   |   |-- unifiedAIService.js   # Provider routing (OpenAI/Gemini + fallback)
+  |   |   |-- aiService.js          # OpenAI SDK integration
+  |   |   |-- geminiService.js      # Google Gemini/Imagen integration
+  |   |   |-- researchService.js    # Serper web search integration
+  |
+  |-- frontend/
+  |   |-- index.html                # HTML entry point
+  |   |-- vite.config.js            # Vite configuration
+  |   |-- package.json              # Frontend dependencies
+  |   |-- public/
+  |   |   |-- google.png            # Google OAuth button asset
+  |   |-- src/
+  |       |-- main.jsx              # React entry point
+  |       |-- App.jsx               # Root component (AuthProvider wrapper)
+  |       |-- App.css               # Global app styles
+  |       |-- index.css             # Base styles
+  |       |-- config.js             # Frontend configuration
+  |       |-- context/
+  |       |   |-- AuthContext.jsx    # Authentication & company state management
+  |       |-- services/
+  |       |   |-- api.js            # API client (auth, agents, companies, files)
+  |       |   |-- adminApi.js       # Admin panel API client
+  |       |   |-- supabase.js       # Supabase client initialization
+  |       |-- pages/
+  |       |   |-- Dashboard.jsx     # Main dashboard page (view router)
+  |       |   |-- Dashboard.css
+  |       |-- components/
+  |           |-- AdminPanel.jsx    # Admin: agent configs, API keys, playground
+  |           |-- AdminPanel.css
+  |           |-- Agents.jsx        # Agent runner with per-card Run + Settings
+  |           |-- Agents.css
+  |           |-- ChatInterface.jsx # AI chat interface
+  |           |-- ChatInterface.css
+  |           |-- CompanyProfile.jsx   # Multi-company management
+  |           |-- CompanyProfile.css
+  |           |-- CreateCompany.jsx    # New company creation form
+  |           |-- CreateCompany.css
+  |           |-- CustomerProfile.jsx  # ICP analysis display
+  |           |-- CustomerProfile.css
+  |           |-- ContentCalendar.jsx  # Editable spreadsheet calendar
+  |           |-- ContentCalendar.css
+  |           |-- ContentGeneration.jsx # AI image generation factory
+  |           |-- ContentGeneration.css
+  |           |-- Onboarding.jsx    # Registration & Login form
+  |           |-- Onboarding.css
+  |           |-- Sidebar.jsx       # Navigation sidebar
+  |           |-- Sidebar.css
+  |           |-- SocialAccounts.jsx   # Social platform connections (placeholder)
+  |           |-- SocialAccounts.css
+  |           |-- shared/
+  |               |-- CompanySelector.jsx  # Company switcher dropdown
+  |               |-- CompanySelector.css
+  |               |-- PreviewModal.jsx     # Agent results preview
+  |               |-- PreviewModal.css
+  |               |-- ThinkingModal.jsx    # Agent execution progress
+  |               |-- ThinkingModal.css
+  |               |-- ThinkingIndicator.jsx # Chat loading animation
+  |               |-- Toast.jsx            # Toast notification system
+  |               |-- Toast.css
+  |               |-- WorkerSelector.jsx   # Sub-agent selector
+  |
+  |-- database/
+  |   |-- migrations/
+  |       |-- 001_multicompany_setup.sql       # Companies, files, calendars tables
+  |       |-- 002_fix_company_files_columns.sql # Column fixes
+  |       |-- 003_admin_panel_setup.sql         # Admin role + agent_configs table
+  |       |-- 004_user_agent_overrides.sql      # Per-user agent customizations
+  |       |-- seed_agent_configs.js             # Seed agent configs from directives
+  |       |-- migrate_files_to_storage.js       # Base64 -> Storage migration
+  |
+  |-- directives/
+      |-- ai_orchestrator.md         # Master chat orchestrator SOP
+      |-- icp_analyst.md             # Agent 1: ICP analysis prompt
+      |-- icp_problem_id.md          # Agent 2: Pain point identification
+      |-- content_calendar.md        # Agent 3: Calendar generation prompt
+      |-- messaging_manager.md       # Messaging strategy commander
+      |-- visual_content_creator.md  # Visual content generation SOP
+      |-- dashboard_chat.md          # Chat interface specification
+      |-- phase1_client_creation.md  # Registration flow specification
+      |-- fetch_user_profile.md      # Profile fetch specification
+      |-- messaging/
+          |-- Agent_A.md through Agent_J.md  # 10 messaging framework agents
+
+
+================================================================================
+5. ENVIRONMENT VARIABLES
+================================================================================
+
+The .env file (at project root) must contain:
+
+  # Supabase
+  SUPABASE_URL=https://your-project.supabase.co
+  SUPABASE_KEY=your-anon-or-service-key
+
+  # OpenAI
+  OPENAI_API_KEY=sk-your-openai-key
+  OPENAI_MODEL=gpt-4o                    # Optional, defaults to gpt-4o
+
+  # Google Gemini
+  GEMINI_API_KEY=your-gemini-key
+  GEMINI_IMAGE_MODEL=models/imagen-3.0-generate-001  # Optional
+  GEMINI_MODEL=gemini-2.0-flash                       # Optional
+
+  # AI Provider Routing
+  AI_PROVIDER=openai                     # 'openai' or 'gemini' (primary provider)
+
+  # Serper (Web Search)
+  SERPER_API_KEY=your-serper-key
+
+  # Server
+  PORT=3000                              # Optional, defaults to 3000
+
+Frontend .env variables (frontend/.env, Vite uses VITE_ prefix):
+
+  VITE_BACKEND_URL=http://localhost:3000
+  VITE_SUPABASE_URL=https://your-project.supabase.co
+  VITE_SUPABASE_KEY=your-anon-key
+  VITE_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+
+
+================================================================================
+6. DATABASE SCHEMA (SUPABASE)
+================================================================================
+
+  MULTI-COMPANY ARCHITECTURE (Updated February 2026)
+  ----------------------------------------------------
+  Users can create and manage multiple companies. Each company has isolated
+  data including ICP analysis, calendars, files, and messaging strategies.
+  One company is marked as "active" at a time.
+
+  TABLE: users
+  ------------
+  id                  UUID (primary key)
+  email               TEXT (unique, required)
+  username            TEXT (unique, required) - @handle format, 3-20 chars
+  password            TEXT (plaintext - NOTE: not hashed)
+  role                TEXT (default: 'user') - 'user' or 'admin'
+  active_company_id   UUID (foreign key -> companies.id) - Current active company
+  created_at          TIMESTAMP
+
+  TABLE: companies
+  ----------------
+  id                  UUID (primary key)
+  user_id             UUID (foreign key -> users.id, CASCADE on delete)
+  name                TEXT (required) - Company name
+  website_url         TEXT (optional)
+  icp_data            JSONB (output from Agent 1: ICP Analyst)
+  icp_problems        JSONB (output from Agent 2: Problem Identifier)
+  messaging_strategy  JSONB (output from Messaging Manager agent)
+  is_active           BOOLEAN (default: false) - Only one active per user
+  created_at          TIMESTAMP
+  updated_at          TIMESTAMP
+
+  TABLE: company_files
+  --------------------
+  id              UUID (primary key)
+  company_id      UUID (foreign key -> companies.id, CASCADE on delete)
+  file_type       TEXT (CHECK: 'brand_guidelines', 'logo', 'other')
+  file_name       TEXT (original filename)
+  file_path       TEXT (path in Supabase Storage)
+  file_url        TEXT (public URL from Supabase Storage)
+  mime_type       TEXT (e.g., 'application/pdf', 'image/png')
+  file_size       INTEGER (bytes)
+  text_content    TEXT (extracted text from PDF/DOCX for brand guidelines)
+  uploaded_at     TIMESTAMP
+
+  TABLE: company_calendars
+  -------------------------
+  id              UUID (primary key)
+  company_id      UUID (foreign key -> companies.id, CASCADE on delete)
+  calendar_data   JSONB (full calendar object with posts array)
+  created_at      TIMESTAMP
+
+  TABLE: agent_configs
+  ---------------------
+  id                    SERIAL (primary key)
+  agent_id              INTEGER (unique, required) - 1, 2, or 3
+  name                  TEXT (required) - Display name
+  description           TEXT - Display description
+  system_prompt         TEXT (required) - System prompt for AI
+  directive_template    TEXT (required) - Full prompt template with {{VARS}}
+  ai_provider           TEXT (default: 'auto') - 'openai', 'gemini', or 'auto'
+  ai_model              TEXT - Specific model override (null = use .env default)
+  temperature           NUMERIC(3,2) (default: 0.7)
+  max_tokens            INTEGER (default: 4096)
+  response_format       TEXT (default: 'json_object')
+  is_active             BOOLEAN (default: true) - Can be disabled by admin
+  search_query_template TEXT - Web search query template with {{VARS}}
+  created_at            TIMESTAMPTZ
+  updated_at            TIMESTAMPTZ
+
+  TABLE: user_agent_overrides
+  ----------------------------
+  id              SERIAL (primary key)
+  user_id         UUID (foreign key -> users.id, CASCADE on delete)
+  agent_id        INTEGER (required)
+  overrides       JSONB (default: '{}') - Per-user prompt/model overrides
+  updated_at      TIMESTAMPTZ
+  UNIQUE(user_id, agent_id)
+
+  SUPABASE STORAGE BUCKET: company-files
+  ---------------------------------------
+  Public bucket for file uploads.
+  Path structure: {company_id}/{file_type}_{timestamp}_{filename}
+
+
+================================================================================
+7. BACKEND - DETAILED BREAKDOWN
+================================================================================
+
+
+7.1  SERVER ENTRY (index.js)
+-----------------------------
+File: backend/index.js
+
+Express 5 server with CORS enabled. Loads environment from root .env file.
+Registers all API routes organized by domain.
+
+Routes registered:
+
+  # Agent Routes
+  GET    /api/agents/list              -> agentController.listAgents
+  GET    /api/agents/:agentId/config   -> agentController.getAgentConfig
+  POST   /api/run-agent                -> agentController.runAgent
+  POST   /api/save-results             -> agentController.saveResults
+  POST   /api/reset-results            -> agentController.resetResults
+
+  # User Override Routes
+  GET    /api/user-overrides           -> agentController.getUserOverrides
+  PUT    /api/user-overrides           -> agentController.saveUserOverride
+
+  # Chat & Content Routes
+  POST   /api/orchestrator-chat        -> chatController.handleChat
+  POST   /api/generate-image           -> contentController.generateImage
+
+  # Company Management Routes
+  GET    /api/companies                -> companyController.getCompanies
+  POST   /api/companies                -> companyController.createCompany
+  PUT    /api/companies/:id            -> companyController.updateCompany
+  POST   /api/companies/:id/activate   -> companyController.activateCompany
+  DELETE /api/companies/:id            -> companyController.deleteCompany
+
+  # File Management Routes
+  POST   /api/companies/:id/files      -> fileController.uploadFile
+  GET    /api/companies/:id/files      -> fileController.getFiles
+  DELETE /api/files/:id                -> fileController.deleteFile
+
+  # Admin Panel Routes (protected by requireAdmin middleware)
+  GET    /api/admin/agents             -> adminController.getAgentConfigs
+  PUT    /api/admin/agents/:agentId    -> adminController.updateAgentConfig
+  POST   /api/admin/agents/test        -> adminController.testAgent
+  GET    /api/admin/api-keys           -> adminController.getApiKeyStatus
+  PUT    /api/admin/api-keys           -> adminController.updateApiKey
+
+  # Health Check
+  GET    /health                       -> { status: 'active', version: '2.0.0-optimized' }
+
+
+7.2  CONTROLLERS
+-----------------
+
+7.2.1  agentController.js
+--------------------------
+File: backend/controllers/agentController.js
+
+Central agent controller. Handles agent execution, config caching, user
+overrides, and result persistence.
+
+Exported functions:
+  - listAgents, getAgentConfig, runAgent, saveResults, resetResults,
+    getUserOverrides, saveUserOverride, invalidateConfigCache
+
+  CONFIG CACHING SYSTEM
+  ----------------------
+  In-memory cache of agent_configs table with 5-minute TTL.
+  - getCachedConfigs(): Returns cached configs or refreshes from DB
+  - invalidateConfigCache(): Called by admin updates to bust cache immediately
+
+  listAgents(req, res)
+  --------------------
+  GET /api/agents/list
+  Returns full agent configs (including system_prompt, directive_template)
+  so the user-facing Settings modal can pre-fill with default prompts.
+  Response: { success: true, agents: [...full configs...] }
+
+  getAgentConfig(req, res)
+  -------------------------
+  GET /api/agents/:agentId/config
+  Returns full config for a single agent by agent_id.
+  Response: { success: true, config: {...} }
+
+  runAgent(req, res)
+  ------------------
+  POST /api/run-agent
+  Request body: { email, agent_id, duration?, start_date?, user_overrides? }
+
+  Flow:
+  1. Fetches user record + active company from Supabase
+  2. Guards: requires active company
+  3. Loads brand guidelines text from company_files
+  4. Builds variables map: COMPANY_NAME, WEBSITE_URL, BRAND_CONTEXT,
+     INDUSTRY, ICP_SUMMARY, PROBLEMS_SUMMARY, DURATION, START_DATE
+  5. Loads agent config from cache (agent_configs table)
+  6. If config found (DB-driven path):
+     a. Checks is_active guard
+     b. Applies user_overrides on top of DB defaults:
+        - effectiveSystemPrompt = user_overrides.system_prompt || config.system_prompt
+        - effectiveDirective = user_overrides.directive_template || config.directive_template
+        - effectiveProvider = user_overrides.ai_provider || config.ai_provider
+        - effectiveModel = user_overrides.ai_model || config.ai_model
+     c. Runs web search if search_query_template exists
+     d. Replaces all {{VAR}} placeholders in directive template
+     e. Calls generateCompletion with per-call provider/model override
+  7. If no config found (filesystem fallback):
+     - Reads directive .md files directly
+     - Hardcoded system prompts per agent
+     - Used as safety net only
+
+  saveResults(req, res)
+  ---------------------
+  POST /api/save-results
+  Request body: { email, agent_id, data }
+
+  Persists agent results:
+  - Agent 1 -> updates companies.icp_data
+  - Agent 2 -> updates companies.icp_problems
+  - Agent 3 -> upserts into company_calendars table
+
+  resetResults(req, res)
+  ----------------------
+  POST /api/reset-results
+  Request body: { email, agent_id }
+
+  Clears agent results:
+  - Agent 1 -> sets companies.icp_data to null
+  - Agent 3 -> deletes from company_calendars
+
+  getUserOverrides(req, res)
+  --------------------------
+  GET /api/user-overrides?email=...
+  Loads persisted user overrides from user_agent_overrides table.
+  Returns as map: { 1: {system_prompt, ai_model, ...}, 2: {...} }
+
+  saveUserOverride(req, res)
+  ---------------------------
+  PUT /api/user-overrides
+  Request body: { email, agent_id, overrides }
+  - If overrides is empty: deletes the row (reset to defaults)
+  - Otherwise: upserts the override (onConflict: user_id, agent_id)
+
+
+7.2.2  adminController.js
+---------------------------
+File: backend/controllers/adminController.js
+
+Admin panel backend. All routes protected by requireAdmin middleware.
+
+  getAgentConfigs(req, res)
+  -------------------------
+  GET /api/admin/agents?email=...
+  Returns all agent configs ordered by agent_id.
+
+  updateAgentConfig(req, res)
+  ----------------------------
+  PUT /api/admin/agents/:agentId
+  Request body: { email, ...config fields }
+  Updates agent config in DB. Busts the config cache via invalidateConfigCache()
+  so user-facing runs pick up changes immediately.
+
+  testAgent(req, res)
+  --------------------
+  POST /api/admin/agents/test
+  Request body: { email, system_prompt, directive_template, test_variables,
+                  ai_provider, ai_model, response_format }
+  Playground endpoint. Replaces {{VAR}} in template with test_variables,
+  calls generateCompletion, returns raw output + execution time.
+
+  getApiKeyStatus(req, res)
+  --------------------------
+  GET /api/admin/api-keys?email=...
+  Returns masked API keys (first 4 + last 4 chars visible) plus global
+  settings (AI_PROVIDER, default models).
+
+  updateApiKey(req, res)
+  -----------------------
+  PUT /api/admin/api-keys
+  Request body: { email, key_name, key_value }
+  Updates .env file on disk and process.env in-memory.
+
+
+7.2.3  chatController.js
+--------------------------
+File: backend/controllers/chatController.js
+
+The core orchestrator chat endpoint.
+
+  handleChat(req, res)
+  --------------------
+  Request body: { email, message, history[] }
+
+  Flow:
+  1. BRAND DNA RETRIEVAL - Fetches user + active company from Supabase
+  2. MULTIMEDIA RESEARCH - Regex keyword detection triggers web + image search
+  3. CONTENT CALENDAR CONTEXT - Fetches existing calendar
+  4. PROMPT SYNTHESIS - Loads ai_orchestrator.md, replaces all template variables
+  5. TOOL DEFINITIONS - update_single_post + update_calendar (function calling)
+  6. AI GENERATION - Sends to OpenAI with tools (tool_choice: "auto")
+  7. TOOL CALL HANDLING - Executes calendar modifications against Supabase
+
+
+7.2.4  contentController.js
+-----------------------------
+File: backend/controllers/contentController.js
+
+  generateImage(req, res)
+  -----------------------
+  Request body: { email, prompt, aspect_ratio, model }
+
+  Dual-engine image generation:
+  - PRIMARY: Google Gemini SDK (Imagen) via geminiService
+  - Returns base64 data URI
+
+
+7.2.5  companyController.js
+-----------------------------
+File: backend/controllers/companyController.js
+
+  Handles all company CRUD operations:
+  - getCompanies: List user's companies
+  - createCompany: Create with optional auto-activate
+  - updateCompany: Update name/website
+  - activateCompany: Switch active company
+  - deleteCompany: Delete with CASCADE cleanup
+
+
+7.2.6  fileController.js
+--------------------------
+File: backend/controllers/fileController.js
+
+  Handles file uploads to Supabase Storage:
+  - uploadFile: Multer middleware, 10MB max, validates MIME types,
+    extracts text from PDF/DOCX for brand guidelines
+  - getFiles: List files for a company, optional file_type filter
+  - deleteFile: Remove from Storage + DB
+
+
+7.3  MIDDLEWARE
+----------------
+
+7.3.1  adminAuth.js
+--------------------
+File: backend/middleware/adminAuth.js
+
+  requireAdmin(req, res, next)
+  - Reads email from req.body or req.query
+  - Queries users table for role column
+  - Returns 403 if role !== 'admin'
+  - Attaches req.adminUser for downstream use
+
+
+7.4  SERVICES
+--------------
+
+7.4.1  unifiedAIService.js
+----------------------------
+File: backend/services/unifiedAIService.js
+
+Unified provider routing layer. Sits between controllers and provider-specific
+services. Handles automatic fallback between OpenAI and Gemini.
+
+  generateCompletion(systemPrompt, userPrompt, responseFormat, options = {})
+  - options.provider: per-call provider override ('openai' or 'gemini')
+  - options.model: per-call model override (e.g., 'gpt-4o', 'gemini-2.0-flash')
+  - Routes to primary provider, falls back to secondary on failure
+  - Used by agent runner for structured JSON responses
+
+  generateText(systemPrompt, userPrompt, history)
+  - Simple text completion via Gemini (primary) or OpenAI (fallback)
+
+  generateChatCompletion(systemPrompt, userPrompt, history, tools)
+  - Chat completion with tool support
+  - Used by chat orchestrator
+
+  Provider selection:
+  - Default: reads AI_PROVIDER from .env ('openai' or 'gemini')
+  - Per-call: options.provider overrides for that specific call
+  - Fallback: if primary fails, automatically tries the other provider
+
+
+7.4.2  aiService.js (OpenAI)
+------------------------------
+File: backend/services/aiService.js
+
+  generateCompletion(systemPrompt, userPrompt, responseFormat, modelOverride)
+  - Supports per-call model override
+  - Auto-fallback to gpt-4o if custom model fails
+
+  generateText(systemPrompt, userPrompt, history)
+  generateChatCompletion(systemPrompt, userPrompt, history, tools)
+
+
+7.4.3  geminiService.js (Google GenAI)
+----------------------------------------
+File: backend/services/geminiService.js
+
+  generateGeminiImage(prompt, aspectRatio, model)
+  - Dual engine: "gemini" models use generateContent, others use generateImages
+
+  generateGeminiText(systemPrompt, userPrompt)
+  - Text generation via Gemini models
+
+  generateGeminiCompletion(systemPrompt, userPrompt, responseFormat, modelOverride)
+  - Structured completion for agent use
+  - Supports per-call model override
+  - Auto-fallback to gemini-2.0-flash if custom model fails
+
+
+7.4.4  researchService.js (Serper)
+------------------------------------
+File: backend/services/researchService.js
+
+  webSearch(query) - Returns top 8 organic results as text
+  webImageSearch(query) - Returns top 5 images as objects
+
+
+================================================================================
+8. FRONTEND - DETAILED BREAKDOWN
+================================================================================
+
+
+8.1  ENTRY POINT & APP SHELL
+------------------------------
+Files: frontend/src/main.jsx, frontend/src/App.jsx
+
+main.jsx: Renders <App /> into #root
+App.jsx: Wraps in <AuthProvider>, renders <Dashboard />
+
+
+8.2  PAGES
+-----------
+
+8.2.1  Dashboard.jsx
+---------------------
+File: frontend/src/pages/Dashboard.jsx
+
+Main page component. Manages:
+  - activeView state: 'chat' | 'agents' | 'icp' | 'calendar' | 'social' |
+    'generation' | 'company' | 'create-company' | 'admin'
+  - Sidebar collapse state
+  - Chat session tracking (from localStorage)
+
+Conditional rendering:
+  - If not authenticated: shows <Onboarding />
+  - If activeView === 'admin' && user.role === 'admin': shows <AdminPanel />
+  - Otherwise: renders the active view component
+
+View components:
+  - 'chat'           -> <ChatInterface />
+  - 'agents'         -> <Agents />
+  - 'company'        -> <CompanyProfile />
+  - 'create-company' -> <CreateCompany />
+  - 'icp'            -> <CustomerProfile />
+  - 'calendar'       -> <ContentCalendar />
+  - 'social'         -> <SocialAccounts />
+  - 'generation'     -> <ContentGeneration />
+  - 'admin'          -> <AdminPanel />
+
+
+8.3  COMPONENTS
+----------------
+
+8.3.1  Onboarding.jsx (Registration & Login)
+----------------------------------------------
+File: frontend/src/components/Onboarding.jsx
+
+USERNAME-BASED AUTHENTICATION:
+  LOGIN: Username + Password form, direct Supabase query
+  REGISTER: Single-step form (email, @username, password)
+  NOTE: Google OAuth has been removed
+
+
+8.3.2  Sidebar.jsx
+--------------------
+File: frontend/src/components/Sidebar.jsx
+
+Collapsible navigation sidebar. Shows admin nav item conditionally
+for users with role === 'admin'.
+
+  Navigation items:
+  - Company Profile
+  - Agents
+  - AI Chat
+  - Ideal Customer Profile
+  - Content Calendar
+  - Analytics (placeholder)
+  - Social Accounts
+  - Content Generation
+  - Admin Panel (admin only, lock icon)
+
+  Features:
+  - CompanySelector dropdown for switching companies
+  - "New Chat" button
+  - Recent Chats section
+  - User profile display (@username)
+  - Logout button
+
+
+8.3.3  ChatInterface.jsx
+--------------------------
+File: frontend/src/components/ChatInterface.jsx
+
+ChatGPT-style conversational interface with markdown rendering,
+image display, auto-scroll, and localStorage persistence.
+
+
+8.3.4  Agents.jsx
+-------------------
+File: frontend/src/components/Agents.jsx
+
+Agent execution panel with per-card actions and user-customizable settings.
+
+  Available Agents (names/descriptions from DB):
+  - Agent 1: ICP Analyst
+  - Agent 2: Problem Identifier
+  - Agent 3: Content Calendar Strategist
+
+  Per-Card Features:
+  - Step badge (Step 1, 2, 3)
+  - Completion checkbox
+  - Lock state (previous step must complete)
+  - Disabled state (admin can deactivate)
+  - Settings button (opens Settings modal)
+  - Run Agent button
+  - Override indicator dot (shows when user has customizations)
+
+  Agent 3 Controls:
+  - Duration selector: Weekly / Monthly
+  - Start date picker
+
+  Settings Modal:
+  - Model Configuration: AI Provider dropdown (Auto/OpenAI/Gemini) + AI Model input
+  - System Prompt: Monospace textarea, pre-filled with DB default
+  - Directive Template: Large monospace textarea with {{VARIABLE}} hints
+  - Reset to Defaults: Clears overrides (local + DB)
+  - Done: Saves overrides to DB and closes
+
+  DB Persistence:
+  - On mount: loads agent configs from /api/agents/list
+  - On mount: loads user overrides from /api/user-overrides?email=...
+  - On Done: saves overrides via PUT /api/user-overrides
+  - On Reset: deletes overrides via PUT /api/user-overrides (empty body)
+  - On Run: sends user_overrides in request body to /api/run-agent
+
+
+8.3.5  AdminPanel.jsx
+-----------------------
+File: frontend/src/components/AdminPanel.jsx
+
+Admin panel for managing agent configurations, API keys, and testing prompts.
+Only visible to users with role === 'admin'.
+
+  Layout:
+  - Global API Keys bar at top
+  - Agent selector dropdown
+  - Selected agent config card
+
+  Agent Config Card:
+  - Agent name + description (editable)
+  - System Prompt textarea (monospace)
+  - Directive Template textarea (large, monospace)
+  - AI Provider dropdown (Auto / OpenAI / Gemini)
+  - AI Model text input
+  - Temperature slider (0.0-2.0)
+  - Max Tokens number input
+  - Search Query Template textarea
+  - Active/Inactive toggle
+  - Save / Reset buttons
+
+  API Keys Section:
+  - Shows masked keys: OPENAI_API_KEY, GEMINI_API_KEY, SERPER_API_KEY
+  - AI_PROVIDER global setting dropdown
+  - Update button per key
+
+  Playground:
+  - Loads selected agent's config
+  - Editable system prompt + directive template
+  - Auto-detected {{VARIABLE}} placeholders shown as labeled inputs
+  - File upload for test variables (PDF/DOCX text extraction)
+  - Provider/model override dropdowns
+  - Run Test button -> shows JSON output + execution time
+  - Output in monospace pre-formatted area
+
+
+8.3.6  CompanyProfile.jsx
+----------------------------
+File: frontend/src/components/CompanyProfile.jsx
+
+Multi-company management with list/edit views, file upload for
+brand guidelines and logos.
+
+
+8.3.7  CreateCompany.jsx
+--------------------------
+File: frontend/src/components/CreateCompany.jsx
+
+Simple form for creating a new company (name + optional website URL).
+
+
+8.3.8  CustomerProfile.jsx
+-----------------------------
+File: frontend/src/components/CustomerProfile.jsx
+
+Two-tab display:
+  - Audience Analysis (Agent 1 output)
+  - Problems Identification (Agent 2 output)
+
+
+8.3.9  ContentCalendar.jsx
+-----------------------------
+File: frontend/src/components/ContentCalendar.jsx
+
+Full spreadsheet-style editable content calendar with auto-sync,
+CSV export, add/delete rows and custom columns.
+
+
+8.3.10  ContentGeneration.jsx
+-------------------------------
+File: frontend/src/components/ContentGeneration.jsx
+
+AI image generation factory with model selection, aspect ratio picker,
+and image gallery with preview/download/copy actions.
+
+
+8.3.11  SocialAccounts.jsx
+-----------------------------
+File: frontend/src/components/SocialAccounts.jsx
+
+Static UI placeholder for social platform connections.
+
+
+8.4  SHARED COMPONENTS
+-----------------------
+
+8.4.1  ThinkingModal.jsx - Agent execution progress overlay
+8.4.2  PreviewModal.jsx - Agent results preview with save/regenerate
+8.4.3  ThinkingIndicator.jsx - Chat loading animation with steps
+8.4.4  WorkerSelector.jsx - Sub-agent selector for messaging
+8.4.5  CompanySelector.jsx - Company switcher dropdown in sidebar
+8.4.6  Toast.jsx - Toast notification system (success/error/info)
+
+
+8.5  SERVICES
+--------------
+
+8.5.1  api.js
+  - registerUser, loginUser, getUserProfile
+  - sendChatMessage
+  - getCompanies, createCompany, updateCompany, activateCompany, deleteCompany
+  - uploadFile, getFiles, deleteFile
+
+8.5.2  adminApi.js
+  - getAgentConfigs(email)
+  - updateAgentConfig(email, agentId, config)
+  - testAgent(email, payload)
+  - getApiKeyStatus(email)
+  - updateApiKey(email, keyName, keyValue)
+
+8.5.3  supabase.js
+  - Initializes Supabase client with VITE_ env vars
+
+
+8.6  CONTEXT
+--------------
+
+8.6.1  AuthContext.jsx
+  File: frontend/src/context/AuthContext.jsx
+
+  State: user, isLoading, isOnboarded, companies, activeCompany
+  Methods: login, logout, updateUser, refreshProfile, fetchCompanies, switchCompany
+  Computed: isAuthenticated, isAdmin (user?.role === 'admin')
+
+
+8.7  CONFIGURATION (config.js)
+---------------------------------
+File: frontend/src/config.js
+
+All frontend configuration using Vite env variables (import.meta.env).
+
+
+================================================================================
+9. DIRECTIVES (AI AGENT SOPs)
+================================================================================
+
+9.1  ai_orchestrator.md - Master chat orchestrator system prompt
+9.2  icp_analyst.md - Agent 1: StoryBrand ICP analysis
+9.3  icp_problem_id.md - Agent 2: Top 10 pain points
+9.4  content_calendar.md - Agent 3: Strategic content calendar
+9.5  messaging_manager.md - Messaging strategy orchestrator
+9.6  visual_content_creator.md - Visual content creation SOP
+9.7  Messaging Sub-Agents (A-J): 10 marketing frameworks
+9.8  Legacy Directives: phase1_client_creation.md, dashboard_chat.md,
+     fetch_user_profile.md
+
+
+================================================================================
+10. API ENDPOINTS REFERENCE
+================================================================================
+
+  BASE URL: http://localhost:3000 (configurable via PORT env)
+
+  +------+----------------------------------+----------------------------------------------+
+  | Verb | Endpoint                         | Description                                  |
+  +------+----------------------------------+----------------------------------------------+
+  | GET  | /api/agents/list                 | List all agent configs (full)                |
+  | GET  | /api/agents/:agentId/config      | Single agent config                          |
+  | POST | /api/run-agent                   | Execute AI agent (with optional overrides)   |
+  | POST | /api/save-results                | Persist agent results                        |
+  | POST | /api/reset-results               | Clear agent results                          |
+  | GET  | /api/user-overrides              | Load user's agent overrides                  |
+  | PUT  | /api/user-overrides              | Save/delete user override                    |
+  | POST | /api/orchestrator-chat           | Send chat message to AI orchestrator         |
+  | POST | /api/generate-image              | Generate image via Gemini/Imagen             |
+  | GET  | /api/companies                   | List user's companies                        |
+  | POST | /api/companies                   | Create new company                           |
+  | PUT  | /api/companies/:id               | Update company                               |
+  | POST | /api/companies/:id/activate      | Switch active company                        |
+  | DEL  | /api/companies/:id               | Delete company                               |
+  | POST | /api/companies/:id/files         | Upload file                                  |
+  | GET  | /api/companies/:id/files         | List company files                           |
+  | DEL  | /api/files/:id                   | Delete file                                  |
+  | GET  | /api/admin/agents                | [Admin] List agent configs                   |
+  | PUT  | /api/admin/agents/:agentId       | [Admin] Update agent config                  |
+  | POST | /api/admin/agents/test           | [Admin] Playground - test agent              |
+  | GET  | /api/admin/api-keys              | [Admin] Get masked API keys                  |
+  | PUT  | /api/admin/api-keys              | [Admin] Update API key                       |
+  | GET  | /health                          | Health check                                 |
+  +------+----------------------------------+----------------------------------------------+
+
+  DETAILED PAYLOADS:
+
+  POST /api/run-agent
+    Request:  { email, agent_id, duration?, start_date?, user_overrides? }
+    user_overrides: { system_prompt?, directive_template?, ai_provider?, ai_model? }
+    Response: { success: true, result: <agent-specific JSON> }
+
+  GET /api/user-overrides?email=user@example.com
+    Response: { success: true, overrides: { 1: {...}, 2: {...} } }
+
+  PUT /api/user-overrides
+    Request:  { email, agent_id, overrides: {} }  (empty = delete)
+    Response: { success: true }
+
+
+================================================================================
+11. USER FLOWS
+================================================================================
+
+
+11.1  REGISTRATION FLOW
+-------------------------
+  1. User visits app -> Onboarding component
+  2. Single-step form: email, @username, password
+  3. Direct Supabase insert (checks uniqueness)
+  4. Auto-login on success
+  5. Navigate to Company Profile to add company later
+
+
+11.2  LOGIN FLOW
+-----------------
+  1. Username + Password form
+  2. Direct Supabase query (plaintext password match)
+  3. Sets user in AuthContext + localStorage
+
+
+11.3  AGENT EXECUTION FLOW
+----------------------------
+  1. User navigates to Agents view
+  2. Each agent card shows Run + Settings buttons
+  3. Optional: click Settings to customize prompts/model
+     - Settings pre-filled with DB defaults
+     - User edits are saved to DB on "Done"
+     - Overrides persist across sessions
+  4. Click "Run Agent" on desired card
+  5. Backend:
+     a. Loads agent config from cache (DB)
+     b. Applies user overrides if any
+     c. Performs web search (if search template exists)
+     d. Replaces {{VARS}} in directive template
+     e. Calls unified AI service with provider/model override
+  6. ThinkingModal -> PreviewModal with key findings
+  7. User: "Regenerate" or "Save Strategy"
+
+
+11.4  CHAT / ORCHESTRATOR FLOW
+---------------------------------
+  1. User types message in chat input
+  2. Backend: fetches brand DNA, runs search if needed, builds prompt,
+     sends to OpenAI with calendar modification tools
+  3. Handles tool calls for calendar updates
+  4. Returns response with markdown formatting
+
+
+11.5  CONTENT GENERATION FLOW
+-------------------------------
+  1. Select model + aspect ratio + enter prompt
+  2. Backend: calls Gemini SDK
+  3. Returns base64 image, displayed in gallery
+
+
+11.6  CALENDAR MANAGEMENT FLOW
+---------------------------------
+  1. Calendar generated via Agent 3
+  2. Editable spreadsheet with auto-sync (3s debounce)
+  3. CSV export, add/delete rows and columns
+  4. Chat-based editing via tool calling
+
+
+11.7  ADMIN PANEL FLOW
+------------------------
+  1. Admin user sees "Admin Panel" in sidebar
+  2. Select agent from dropdown
+  3. Edit config (prompt, model, template, etc.)
+  4. Save -> busts cache -> immediate effect on user-facing runs
+  5. API Keys tab: view masked keys, update values
+  6. Playground: test agents with custom variables, see output + timing
+
+
+11.8  USER AGENT SETTINGS FLOW
+---------------------------------
+  1. User clicks Settings (gear icon) on any agent card
+  2. Modal opens with DB defaults pre-filled
+  3. User can change: AI Provider, AI Model, System Prompt, Directive Template
+  4. Click "Done" -> overrides saved to user_agent_overrides table
+  5. Click "Reset to Defaults" -> overrides deleted from DB
+  6. On next Run: overrides automatically applied on top of DB defaults
+  7. Overrides persist across sessions (loaded from DB on mount)
+
+
+================================================================================
+12. EXTERNAL SERVICE INTEGRATIONS
+================================================================================
+
+  SERVICE         PURPOSE                     USED IN
+  --------------- --------------------------- ----------------------------------
+  OpenAI API      Text generation,            aiService.js -> unifiedAIService.js
+                  chat completions,
+                  function calling
+
+  Google Gemini   Image generation,           geminiService.js -> unifiedAIService.js
+  / Imagen API    text generation
+
+  Serper.dev      Real-time web search,       researchService.js
+                  image search
+
+  Supabase        PostgreSQL database,        Backend controllers +
+                  file storage                frontend services
+
+
+================================================================================
+13. CURRENT STATUS & ROADMAP
+================================================================================
+
+  COMPLETED
+  ---------
+  [x] User registration (username/password, direct Supabase)
+  [x] User login (username-based authentication)
+  [x] Dashboard with collapsible sidebar navigation
+  [x] AI Chat interface with orchestrator (OpenAI GPT-4o)
+  [x] Real-time web search integration (Serper)
+  [x] Agent 1: ICP Analyst (StoryBrand framework)
+  [x] Agent 2: Pain Point Identifier (top 10 problems)
+  [x] Agent 3: Content Calendar Strategist (7 or 30 posts)
+  [x] Messaging Strategy Manager with 10 sub-agents (A-J)
+  [x] Customer Profile view (ICP analysis + problems display)
+  [x] Content Calendar view (editable spreadsheet with auto-sync)
+  [x] Content Generation view (Gemini/Imagen image generation)
+  [x] Calendar modification via chat (single post + bulk tools)
+  [x] Calendar safety checks (prevents accidental data wipe)
+  [x] CSV export for Google Sheets
+  [x] Custom column support in calendar
+  [x] Responsive dark theme with glassmorphism design
+  [x] Multi-company support (create, switch, delete companies)
+  [x] File management (brand guidelines, logos via Supabase Storage)
+  [x] Brand guideline text extraction (PDF/DOCX)
+  [x] Company file management in CompanyProfile
+  [x] Admin Panel with agent config management
+  [x] Admin API key management (masked display, live update)
+  [x] Admin playground (test agents with custom variables)
+  [x] DB-driven agent execution (agent_configs table)
+  [x] In-memory config cache with 5-min TTL
+  [x] Unified AI service (OpenAI/Gemini with auto-fallback)
+  [x] Per-call provider and model override support
+  [x] Per-card Run + Settings buttons on Agents page
+  [x] User agent overrides (custom prompts, models per agent)
+  [x] DB persistence for user overrides (across sessions)
+  [x] Admin role system (database-based, sidebar conditional)
+  [x] Toast notification system
+  [x] Company selector dropdown in sidebar
+
+  PLANNED
+  -------
+  [ ] Social media platform connections (Instagram, X, LinkedIn, Facebook APIs)
+  [ ] Analytics dashboard
+  [ ] Automated posting / scheduling
+  [ ] Performance reports
+  [ ] Video generation pipeline (Veo, HeyGen integration)
+  [ ] Carousel generation pipeline
+  [ ] Password hashing (currently plaintext)
+  [ ] Proper session management / JWT authentication
+  [ ] Multi-session chat history
+
+
+================================================================================
+                        END OF DOCUMENTATION
+================================================================================

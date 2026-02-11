@@ -1,0 +1,340 @@
+/* ===========================================
+   CompanyProfile — Inline Edit Layout
+   =========================================== */
+
+.cp-container {
+    padding: 1.25rem 1.5rem;
+    max-width: 900px;
+    margin: 0 auto;
+    height: 100%;
+    overflow-y: auto;
+    animation: cpFade 0.3s ease;
+}
+
+@keyframes cpFade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.cp-container::-webkit-scrollbar { width: 5px; }
+.cp-container::-webkit-scrollbar-track { background: transparent; }
+.cp-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+/* ---- Header ---- */
+.cp-header { margin-bottom: 1rem; }
+
+.cp-header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.cp-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ---- Shared Buttons ---- */
+.cp-btn-primary {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.cp-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(102,126,234,0.35); }
+.cp-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.cp-btn-danger {
+    padding: 0.5rem 1rem;
+    background: rgba(255,107,107,0.12);
+    border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 8px;
+    color: #ff6b6b;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.cp-btn-danger:hover { background: rgba(255,107,107,0.22); }
+.cp-btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cp-btn-view {
+    padding: 0.25rem 0.55rem;
+    background: rgba(102,126,234,0.12);
+    border: 1px solid rgba(102,126,234,0.25);
+    border-radius: 6px;
+    color: #667eea;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.cp-btn-view:hover { background: rgba(102,126,234,0.22); }
+
+.cp-btn-del {
+    padding: 0.25rem 0.55rem;
+    background: rgba(255,107,107,0.12);
+    border: 1px solid rgba(255,107,107,0.25);
+    border-radius: 6px;
+    color: #ff6b6b;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.cp-btn-del:hover { background: rgba(255,107,107,0.22); }
+
+.cp-btn-activate {
+    padding: 0.35rem 0.75rem;
+    background: rgba(81,207,102,0.12);
+    border: 1px solid rgba(81,207,102,0.3);
+    border-radius: 6px;
+    color: #51cf66;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.cp-btn-activate:hover { background: rgba(81,207,102,0.22); }
+.cp-btn-activate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Active Section ---- */
+.cp-active-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    position: relative;
+}
+
+.cp-active-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: rgba(81,207,102,0.12);
+    border: 1px solid rgba(81,207,102,0.3);
+    border-radius: 5px;
+    color: #51cf66;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: fit-content;
+}
+
+/* ---- Card ---- */
+.cp-card {
+    padding: 1rem 1.15rem;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+}
+
+.cp-card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 0.7rem;
+}
+
+/* ---- Fields ---- */
+.cp-field { margin-bottom: 0.65rem; }
+.cp-field:last-child { margin-bottom: 0; }
+
+.cp-field label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.85);
+}
+
+.cp-req { color: #ff6b6b; }
+.cp-opt { font-size: 0.8rem; font-weight: 400; color: rgba(255,255,255,0.4); }
+
+.cp-field input {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.88rem;
+    transition: border-color 0.2s;
+}
+.cp-field input:focus { outline: none; border-color: rgba(102,126,234,0.5); }
+
+/* ---- File Section ---- */
+.cp-file-section { margin-bottom: 0.85rem; }
+.cp-file-section:last-child { margin-bottom: 0; }
+
+.cp-file-header { margin-bottom: 0.35rem; }
+
+.cp-file-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    margin-right: 0.5rem;
+}
+
+.cp-file-hint {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.35);
+}
+
+.cp-file-drop {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.7rem;
+    background: rgba(255,255,255,0.03);
+    border: 2px dashed rgba(255,255,255,0.15);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 0.35rem;
+}
+.cp-file-drop:hover { background: rgba(255,255,255,0.06); border-color: rgba(102,126,234,0.4); }
+.cp-file-drop input[type="file"] { display: none; }
+.cp-file-drop svg { width: 18px; height: 18px; color: rgba(255,255,255,0.5); flex-shrink: 0; }
+.cp-file-drop span { color: rgba(255,255,255,0.7); font-weight: 500; font-size: 0.83rem; }
+
+/* ---- File Row ---- */
+.cp-file-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.7rem;
+    background: rgba(102,126,234,0.06);
+    border: 1px solid rgba(102,126,234,0.15);
+    border-radius: 8px;
+    margin-bottom: 0.3rem;
+}
+
+.cp-file-icon { width: 18px; height: 18px; color: #667eea; flex-shrink: 0; }
+.cp-file-thumb { width: 28px; height: 28px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+
+.cp-file-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.cp-file-name { color: rgba(255,255,255,0.9); font-size: 0.83rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-file-size { color: rgba(255,255,255,0.35); font-size: 0.72rem; }
+
+/* ---- Save Row ---- */
+.cp-save-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    justify-content: flex-end;
+    margin-top: 0.25rem;
+}
+
+.cp-saved-msg {
+    color: #51cf66;
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin-right: auto;
+}
+
+/* ---- Add New Company Dropdown ---- */
+.cp-add-section {
+    margin-top: 1.25rem;
+}
+
+.cp-add-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.7rem 1rem;
+    background: rgba(255,255,255,0.025);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.cp-add-toggle:hover { background: rgba(102,126,234,0.06); border-color: rgba(102,126,234,0.3); color: #667eea; }
+.cp-add-toggle svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.cp-create-form {
+    margin-top: 0.6rem;
+    padding: 1rem 1.15rem;
+    background: rgba(102,126,234,0.04);
+    border: 1px solid rgba(102,126,234,0.15);
+    border-radius: 10px;
+    animation: cpFade 0.2s ease;
+}
+
+.cp-create-submit {
+    margin-top: 0.5rem;
+    width: 100%;
+}
+
+/* ---- Other Companies ---- */
+.cp-others {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.cp-others h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 0.6rem;
+}
+
+.cp-others-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cp-other-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.cp-other-card:hover { opacity: 1; }
+
+.cp-other-info { display: flex; flex-direction: column; min-width: 0; }
+.cp-other-name { font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.9); }
+.cp-other-url { font-size: 0.75rem; color: rgba(102,126,234,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.cp-other-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+/* ---- Empty State ---- */
+.cp-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.cp-empty svg { width: 48px; height: 48px; color: rgba(255,255,255,0.2); margin-bottom: 0.75rem; }
+.cp-empty h2 { font-size: 1.15rem; color: rgba(255,255,255,0.7); margin-bottom: 0.4rem; }
+.cp-empty p { font-size: 0.88rem; color: rgba(255,255,255,0.4); margin-bottom: 1rem; }
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+    .cp-container { padding: 0.75rem 1rem; }
+    .cp-header-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .cp-create-bar { flex-direction: column; }
+    .cp-save-row { flex-direction: column; align-items: stretch; }
+    .cp-save-row .cp-saved-msg { text-align: center; margin: 0; }
+}

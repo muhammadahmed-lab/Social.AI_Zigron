@@ -1,0 +1,97 @@
+/* ===========================================
+   Premium AI Design System
+   unifying the rich aesthetics of the platform
+   =========================================== */
+
+:root {
+  /* Color Palette */
+  --bg-dark: #0a0a1a;
+  --bg-card: #16161a;
+  --primary: #10b981;
+  /* Emerald */
+  --primary-glow: rgba(16, 185, 129, 0.4);
+  --secondary: #6366f1;
+  /* Indigo */
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  --text-dim: #4b5563;
+  --danger: #ef4444;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-hover: rgba(255, 255, 255, 0.06);
+  --glass-blur: blur(12px);
+
+  /* Spacing & Borders */
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+}
+
+/* Shared Utility Classes */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  background: var(--glass-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.glow-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 100px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px var(--primary-glow);
+}
+
+.glow-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px var(--primary-glow);
+  filter: brightness(1.1);
+}
+
+.glow-btn:active {
+  transform: translateY(0);
+}
+
+/* Modal Overlays */
+.premium-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+/* Text Gradients */
+.text-gradient {
+  background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

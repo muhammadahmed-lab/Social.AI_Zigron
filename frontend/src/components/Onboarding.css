@@ -1,0 +1,257 @@
+/* ===========================================
+   Onboarding - Clean Auth Panel
+   =========================================== */
+
+.onboarding-panel {
+    width: 100%;
+    max-width: 420px;
+    padding: 0;
+    background: linear-gradient(180deg, #16161e 0%, #111118 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(99, 102, 241, 0.05);
+}
+
+/* Brand Header */
+.ob-brand {
+    text-align: center;
+    padding: 2.5rem 2rem 1.5rem;
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+}
+
+.ob-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    color: #818cf8;
+}
+
+.ob-brand h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+}
+
+.ob-brand h1 span {
+    background: linear-gradient(135deg, #6366f1 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.ob-tagline {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+/* Tab Bar */
+.ob-tab-bar {
+    display: flex;
+    gap: 4px;
+    margin: 0 1.5rem;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+}
+
+.ob-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 9px;
+    color: #6b7280;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ob-tab:hover:not(.active) {
+    color: #9ca3af;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.ob-tab.active {
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+}
+
+.ob-tab svg {
+    flex-shrink: 0;
+}
+
+/* Error */
+.ob-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 1.5rem 0;
+    padding: 10px 14px;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 10px;
+    color: #fca5a5;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.ob-error svg {
+    flex-shrink: 0;
+    color: #ef4444;
+}
+
+/* Form */
+.ob-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 1.5rem 1.5rem 0;
+}
+
+.ob-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ob-field label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ob-field label svg {
+    color: #6b7280;
+}
+
+.ob-field input {
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.ob-field input:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.4);
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+.ob-field input::placeholder {
+    color: #4b5563;
+}
+
+/* Submit Button */
+.ob-submit {
+    width: 100%;
+    padding: 13px 20px;
+    margin-top: 6px;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25);
+}
+
+.ob-submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    filter: brightness(1.08);
+}
+
+.ob-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.ob-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Spinner */
+.ob-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: ob-spin 0.7s linear infinite;
+}
+
+@keyframes ob-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Footer */
+.ob-footer {
+    padding: 1.2rem 1.5rem;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    margin-top: 1.5rem;
+}
+
+.ob-footer span {
+    font-size: 0.7rem;
+    color: #4b5563;
+    letter-spacing: 0.03em;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .onboarding-panel {
+        border-radius: 16px;
+    }
+
+    .ob-brand {
+        padding: 2rem 1.5rem 1.2rem;
+    }
+
+    .ob-tab-bar {
+        margin: 0 1.2rem;
+    }
+
+    .ob-form {
+        padding: 1.2rem 1.2rem 0;
+    }
+}
