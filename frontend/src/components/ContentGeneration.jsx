@@ -3,10 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import config from '../config';
 import './ContentGeneration.css';
 
+// Module-level: survives React StrictMode unmount/remount cycle
+let _pendingCalendarPost = null;
+
 const ContentGeneration = () => {
-    const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState('visuals'); // 'visuals', 'videos'
-    const [selectedAgent, setSelectedAgent] = useState('static'); // sub-selection
+    const { user, activeCompany } = useAuth();
+    const [activeTab, setActiveTab] = useState('visuals');
+    const [selectedAgent, setSelectedAgent] = useState('static');
 
     // Global States
     const [isGenerating, setIsGenerating] = useState(false);
@@ -18,51 +21,51 @@ const ContentGeneration = () => {
     const [imageAspectRatio, setImageAspectRatio] = useState("1:1");
     const [generatedImages, setGeneratedImages] = useState([]);
     const [previewImage, setPreviewImage] = useState(null);
-    const [calendarSource, setCalendarSource] = useState(null); // tracks if auto-filled from calendar
+    const [calendarSource, setCalendarSource] = useState(null);
 
     // Check for calendar post data on mount (from Content Calendar "Generate" flow)
-    // Only auto-fills fields — user must click Generate manually
     useEffect(() => {
-        const calendarPost = localStorage.getItem('calendarPostForGeneration');
-        if (calendarPost) {
-            try {
-                const post = JSON.parse(calendarPost);
-                localStorage.removeItem('calendarPostForGeneration');
-
-                // Build prompt from calendar post data
-                let prompt = '';
-                if (post.detailed_prompt) {
-                    prompt = post.detailed_prompt;
-                } else {
-                    // Build from available fields
-                    const parts = [];
-                    if (post.overlay_text) parts.push(post.overlay_text);
-                    if (post.current_problem) parts.push(`Topic: ${post.current_problem}`);
-                    if (post.description) parts.push(post.description);
-                    prompt = parts.join('. ');
+        // Read from localStorage into module variable (only once, first mount)
+        if (!_pendingCalendarPost) {
+            const raw = localStorage.getItem('calendarPostForGeneration');
+            if (raw) {
+                try {
+                    _pendingCalendarPost = JSON.parse(raw);
+                } catch {
+                    _pendingCalendarPost = null;
                 }
-
-                if (prompt) {
-                    setImagePrompt(prompt);
-                    if (post.overlay_text) setOverlayText(post.overlay_text);
-                    setCalendarSource(post);
-                    setActiveTab('visuals');
-                    setSelectedAgent('static');
-                }
-            } catch (e) {
-                console.error('Failed to parse calendar post data:', e);
                 localStorage.removeItem('calendarPostForGeneration');
+            }
+        }
+
+        if (_pendingCalendarPost) {
+            const post = _pendingCalendarPost;
+            _pendingCalendarPost = null;
+
+            let prompt = '';
+            if (post.detailed_prompt) {
+                prompt = post.detailed_prompt;
+            } else {
+                const parts = [];
+                if (post.overlay_text) parts.push(post.overlay_text);
+                if (post.current_problem) parts.push(`Topic: ${post.current_problem}`);
+                if (post.description) parts.push(post.description);
+                prompt = parts.join('. ');
+            }
+
+            if (prompt) {
+                setImagePrompt(prompt);
+                if (post.overlay_text) setOverlayText(post.overlay_text);
+                setCalendarSource(post);
+                setActiveTab('visuals');
+                setSelectedAgent('static');
             }
         } else {
             // Normal draft persistence load
             const savedPrompt = localStorage.getItem('visualPromptDraft');
-            if (savedPrompt) {
-                setImagePrompt(savedPrompt);
-            }
+            if (savedPrompt) setImagePrompt(savedPrompt);
             const savedOverlay = localStorage.getItem('overlayTextDraft');
-            if (savedOverlay) {
-                setOverlayText(savedOverlay);
-            }
+            if (savedOverlay) setOverlayText(savedOverlay);
         }
     }, []);
 
