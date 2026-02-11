@@ -88,7 +88,7 @@ const Dashboard = () => {
                 )}
 
                 {activeView === 'company' && (
-                    <CompanyProfile />
+                    <CompanyProfile onNavigate={setActiveView} />
                 )}
 
                 {activeView === 'icp' && (

@@ -13,7 +13,7 @@ import {
 } from '../services/api';
 import './CompanyProfile.css';
 
-const CompanyProfile = () => {
+const CompanyProfile = ({ onNavigate }) => {
     const { user, companies, activeCompany, fetchCompanies } = useAuth();
     const { addToast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
@@ -161,7 +161,13 @@ const CompanyProfile = () => {
                         <polyline points="9 22 9 12 15 12 15 22" />
                     </svg>
                     <h2>No companies yet</h2>
-                    <p>Create your first company from the sidebar</p>
+                    <p>Set up your company profile to get started with AI agents</p>
+                    <button className="cp-btn-primary" onClick={() => onNavigate && onNavigate('create-company')}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        Create Your First Company
+                    </button>
                 </div>
             </div>
         );
