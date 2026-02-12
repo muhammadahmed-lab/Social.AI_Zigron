@@ -231,15 +231,8 @@ const ContentGeneration = () => {
                                 <div className="control-group">
                                     <label>Image Generation Engine</label>
                                     <select value={selectedImageModel} onChange={(e) => setSelectedImageModel(e.target.value)}>
-                                        <optgroup label="Gemini Visual Series (2026)">
-                                            <option value="models/gemini-3-pro-image-preview">Nano Banana 3 Pro (Active)</option>
-                                            <option value="models/gemini-2.5-flash-image">Nano Banana (Fast)</option>
-                                        </optgroup>
-                                        <optgroup label="Imagen Production Suite">
-                                            <option value="models/imagen-4.0-generate-001">Imagen 4.0 Pro</option>
-                                            <option value="models/imagen-4.0-fast-generate-001">Imagen 4.0 Fast</option>
-                                            <option value="models/imagen-3.0-generate-001">Imagen 3.0 (Stable High-Res)</option>
-                                        </optgroup>
+                                        <option value="models/gemini-3-pro-image-preview">Gemini 3 Pro (Default)</option>
+                                        <option value="models/gemini-2.5-flash-image">Gemini 2.5 Flash (Fast)</option>
                                     </select>
                                 </div>
 
