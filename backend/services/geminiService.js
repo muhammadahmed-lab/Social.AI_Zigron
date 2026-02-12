@@ -68,19 +68,19 @@ async function generateGeminiImage(prompt, aspectRatio = "1:1", model = null) {
             const response = await client.models.generateImages({
                 model: modelId,
                 prompt: prompt,
-                parameters: {
-                    sampleCount: 1,
-                    aspectRatio: aspectRatio,
-                    outputMimeType: "image/png"
+                config: {
+                    numberOfImages: 1,
+                    aspectRatio: aspectRatio
                 }
             });
 
             const generatedImage = response.generatedImages?.[0];
             if (!generatedImage) throw new Error("No image data returned from Gemini Visual SDK.");
 
-            imageUrl = generatedImage.imageBytes
-                ? `data:image/png;base64,${generatedImage.imageBytes}`
-                : generatedImage.uri;
+            const imgBytes = generatedImage.image?.imageBytes;
+            imageUrl = imgBytes
+                ? `data:image/png;base64,${imgBytes}`
+                : generatedImage.image?.uri;
         }
 
         if (!imageUrl) throw new Error(`Could not extract image from ${modelId} response.`);
