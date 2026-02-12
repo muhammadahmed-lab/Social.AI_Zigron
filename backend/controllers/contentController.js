@@ -1,12 +1,12 @@
 const { generateGeminiImage } = require('../services/geminiService');
 
-// Fallback model when primary fails (must be a Gemini multimodal model)
-const FALLBACK_IMAGE_MODEL = 'models/gemini-2.5-flash-image';
+// Fallback model when primary fails
+const FALLBACK_IMAGE_MODEL = 'models/imagen-4.0-generate-001';
 
 /**
  * Image Generation via Gemini SDK
  * Primary: User-selected model
- * Fallback: Gemini 2.5 Flash Image
+ * Fallback: Imagen 4.0
  */
 const generateImage = async (req, res) => {
     const { email, prompt, aspect_ratio = "1:1", model = null } = req.body;
@@ -24,7 +24,7 @@ const generateImage = async (req, res) => {
         } catch (primaryErr) {
             console.warn(`[CONTENT-GEN] Primary model failed: ${primaryErr.message}`);
 
-            // Fallback to Gemini Flash if primary was different
+            // Fallback to Imagen 4.0 if primary was different
             if (primaryModel !== FALLBACK_IMAGE_MODEL) {
                 console.log(`[CONTENT-GEN] Retrying with fallback model: ${FALLBACK_IMAGE_MODEL}`);
                 try {

@@ -231,8 +231,15 @@ const ContentGeneration = () => {
                                 <div className="control-group">
                                     <label>Image Generation Engine</label>
                                     <select value={selectedImageModel} onChange={(e) => setSelectedImageModel(e.target.value)}>
-                                        <option value="models/gemini-3-pro-image-preview">Gemini 3 Pro (Default)</option>
-                                        <option value="models/gemini-2.5-flash-image">Gemini 2.5 Flash (Fast)</option>
+                                        <optgroup label="Gemini (Multimodal)">
+                                            <option value="models/gemini-3-pro-image-preview">Gemini 3 Pro (Default)</option>
+                                            <option value="models/gemini-2.5-flash-image">Gemini 2.5 Flash (Fast)</option>
+                                        </optgroup>
+                                        <optgroup label="Imagen (Dedicated)">
+                                            <option value="models/imagen-4.0-generate-001">Imagen 4.0</option>
+                                            <option value="models/imagen-4.0-ultra-generate-001">Imagen 4.0 Ultra</option>
+                                            <option value="models/imagen-4.0-fast-generate-001">Imagen 4.0 Fast</option>
+                                        </optgroup>
                                     </select>
                                 </div>
 
