@@ -65,12 +65,25 @@ async function generateGeminiImage(prompt, aspectRatio = "1:1", model = null) {
             }
         } else {
             log("Using Dedicated Visual Engine (generateImages)...");
+
+            // Imagen models only support: 1:1, 9:16, 16:9, 4:3, 3:4
+            const IMAGEN_RATIO_MAP = {
+                '4:5': '3:4',
+                '2:3': '3:4',
+                '3:2': '4:3',
+                '5:4': '4:3',
+            };
+            const imagenRatio = IMAGEN_RATIO_MAP[aspectRatio] || aspectRatio;
+            if (imagenRatio !== aspectRatio) {
+                log(`Mapped unsupported ratio ${aspectRatio} → ${imagenRatio} for Imagen`);
+            }
+
             const response = await client.models.generateImages({
                 model: modelId,
                 prompt: prompt,
                 config: {
                     numberOfImages: 1,
-                    aspectRatio: aspectRatio
+                    aspectRatio: imagenRatio
                 }
             });
 
