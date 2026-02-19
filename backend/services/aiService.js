@@ -48,20 +48,8 @@ async function generateCompletion(systemPrompt, userPrompt, responseFormat = "js
         }
     }
 
-    try {
-        return await attemptCompletion(model);
-    } catch (primaryError) {
-        if (model !== "gpt-4o") {
-            log(`[FALLBACK] Primary model failed. Re-routing through GPT-4o...`);
-            try {
-                return await attemptCompletion("gpt-4o");
-            } catch (fallbackError) {
-                log(`[CRITICAL] All model uplinks failed: ${fallbackError.message}`);
-                throw fallbackError;
-            }
-        }
-        throw primaryError;
-    }
+    // No internal fallback — let unifiedAIService handle cross-provider fallback to Gemini
+    return await attemptCompletion(model);
 }
 
 /**
