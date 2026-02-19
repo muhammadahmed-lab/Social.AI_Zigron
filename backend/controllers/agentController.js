@@ -124,126 +124,111 @@ const runAgent = async (req, res) => {
         const allConfigs = await getCachedConfigs();
         const agentConfig = allConfigs.find(c => c.agent_id === aid);
 
-        if (agentConfig) {
-            // Guard: check if agent is active
-            if (agentConfig.is_active === false) {
-                throw new Error(`Agent "${agentConfig.name}" is currently disabled by an administrator.`);
-            }
-
-            // --- Fetch user's saved overrides from DB (takes priority over admin global prompts) ---
-            const { data: savedOverride } = await supabase
-                .from('user_agent_overrides')
-                .select('overrides')
-                .eq('user_id', user.id)
-                .eq('agent_id', aid)
-                .maybeSingle();
-
-            // Merge: request-level overrides > DB saved overrides > admin global config
-            const dbOverrides = savedOverride?.overrides || {};
-            const merged = { ...dbOverrides, ...(user_overrides || {}) };
-
-            const effectiveSystemPrompt = merged.system_prompt || agentConfig.system_prompt;
-
-            // Smart directive building:
-            // If user wrote plain-text custom instructions (no OUTPUT FORMAT / JSON schema),
-            // auto-append the admin's OUTPUT FORMAT section so the output is always valid JSON.
-            let effectiveDirective;
-            const userDirective = merged.directive_template;
-            if (userDirective) {
-                const hasOutputFormat = userDirective.includes('OUTPUT FORMAT') || userDirective.includes('REQUIRED JSON FORMAT') || userDirective.includes('JSON FORMAT') || userDirective.includes('"industry"') || userDirective.includes('"icp_');
-                if (hasOutputFormat) {
-                    // Power user — they included full schema, use as-is
-                    effectiveDirective = userDirective;
-                } else {
-                    // Plain text instructions — prepend company context + append admin's output schema
-                    // (plain text prompts have no {{VAR}} placeholders, so company info must be injected explicitly)
-                    const companyContext = `COMPANY: {{COMPANY_NAME}}\nWEBSITE: {{WEBSITE_URL}}\nINDUSTRY: {{INDUSTRY}}\nBRAND CONTEXT: {{BRAND_CONTEXT}}\nRESEARCH DATA: {{RESEARCH_DATA}}`;
-                    const adminDirective = agentConfig.directive_template || '';
-                    // Support multiple schema marker styles used across different directives
-                    const schemaMarkers = ['OUTPUT FORMAT', 'REQUIRED JSON FORMAT', 'JSON FORMAT', 'OUTPUT SCHEMA'];
-                    let schemaMarker = -1;
-                    for (const marker of schemaMarkers) {
-                        const idx = adminDirective.indexOf(marker);
-                        if (idx !== -1) { schemaMarker = idx; break; }
-                    }
-                    const outputSchema = schemaMarker !== -1 ? adminDirective.substring(schemaMarker) : '';
-                    effectiveDirective = outputSchema
-                        ? `${companyContext}\n\n${userDirective}\n\n---\n\n${outputSchema}`
-                        : `${companyContext}\n\n${userDirective}`;
-                    console.log(`[AGENT-RUN] Plain text instructions detected — injected company context + appended output schema`);
-                }
-            } else {
-                effectiveDirective = agentConfig.directive_template;
-            }
-            const effectiveProvider = (merged.ai_provider && merged.ai_provider !== 'auto')
-                ? merged.ai_provider
-                : (agentConfig.ai_provider !== 'auto' ? agentConfig.ai_provider : undefined);
-            const effectiveModel = merged.ai_model || agentConfig.ai_model || undefined;
-
-            console.log(`[AGENT-RUN] Executing "${agentConfig.name}" (DB config${user_overrides ? ' + user overrides' : ''}) for ${company.name}`);
-
-            // Run web search if template exists
-            let searchData = '';
-            if (agentConfig.search_query_template) {
-                let searchQuery = agentConfig.search_query_template;
-                for (const [key, value] of Object.entries(variables)) {
-                    searchQuery = searchQuery.replaceAll(`{{${key}}}`, value);
-                }
-                searchData = await webSearch(searchQuery);
-            }
-            variables.RESEARCH_DATA = searchData || 'No search results available.';
-
-            // Replace all {{VAR}} in directive template
-            let prompt = effectiveDirective;
-            for (const [key, value] of Object.entries(variables)) {
-                prompt = prompt.replaceAll(`{{${key}}}`, value);
-            }
-
-            result = await generateCompletion(
-                effectiveSystemPrompt,
-                prompt,
-                agentConfig.response_format || 'json_object',
-                { provider: effectiveProvider, model: effectiveModel }
-            );
-        } else {
-            // --- FILESYSTEM FALLBACK (safety net) ---
-            console.log(`[AGENT-RUN] No DB config for agent ${aid}, using filesystem fallback`);
-
-            if (aid === 1) {
-                const searchQuery = `${company.name} ${company.website_url || ''} target audience industry segments and positioning`;
-                const searchData = await webSearch(searchQuery);
-                const directive = fs.readFileSync(path.join(__dirname, '../../directives/icp_analyst.md'), 'utf-8');
-                const prompt = directive
-                    .replaceAll('{{COMPANY_NAME}}', company.name)
-                    .replaceAll('{{WEBSITE_URL}}', company.website_url || 'N/A')
-                    .replaceAll('{{BRAND_CONTEXT}}', brand_guidelines_content || 'N/A')
-                    .replaceAll('{{RESEARCH_DATA}}', searchData || 'No search results available.');
-                result = await generateCompletion("You are a StoryBrand Strategist.", prompt);
-            } else if (aid === 2) {
-                const industry = company.icp_data?.industry || company.name;
-                const searchQuery = `${industry} ${company.website_url || ''} customer pain points quora reddit frustrations`;
-                const searchData = await webSearch(searchQuery);
-                const directive = fs.readFileSync(path.join(__dirname, '../../directives/icp_problem_id.md'), 'utf-8');
-                const prompt = directive
-                    .replaceAll('{{COMPANY_NAME}}', company.name)
-                    .replaceAll('{{WEBSITE_URL}}', company.website_url || 'N/A')
-                    .replaceAll('{{INDUSTRY}}', industry)
-                    .replaceAll('{{ICP_SUMMARY}}', JSON.stringify(company.icp_data || {}))
-                    .replaceAll('{{RESEARCH_DATA}}', searchData || 'No search results available.');
-                result = await generateCompletion("You are a Problem Identification Expert.", prompt);
-            } else if (aid === 3) {
-                const directive = fs.readFileSync(path.join(__dirname, '../../directives/content_calendar.md'), 'utf-8');
-                const prompt = directive
-                    .replaceAll('{{COMPANY_NAME}}', company.name)
-                    .replaceAll('{{WEBSITE_URL}}', company.website_url || 'N/A')
-                    .replaceAll('{{START_DATE}}', start_date)
-                    .replaceAll('{{BRAND_CONTEXT}}', brand_guidelines_content || 'N/A')
-                    .replaceAll('{{ICP_SUMMARY}}', JSON.stringify(company.icp_data || {}))
-                    .replaceAll('{{PROBLEMS_SUMMARY}}', JSON.stringify(company.icp_problems || {}))
-                    .replaceAll('{{DURATION}}', duration);
-                result = await generateCompletion("You are a Content Strategist.", prompt);
-            }
+        // Guard: check if agent is disabled
+        if (agentConfig?.is_active === false) {
+            throw new Error(`Agent "${agentConfig.name}" is currently disabled by an administrator.`);
         }
+
+        // --- Filesystem fallback definitions (used when DB config not found) ---
+        const FILESYSTEM_CONFIGS = {
+            1: { file: 'icp_analyst.md',      system: 'You are a StoryBrand Strategist.',         search: '{{COMPANY_NAME}} {{WEBSITE_URL}} target audience industry segments and positioning' },
+            2: { file: 'icp_problem_id.md',   system: 'You are a Problem Identification Expert.', search: '{{INDUSTRY}} {{WEBSITE_URL}} customer pain points quora reddit frustrations' },
+            3: { file: 'content_calendar.md', system: 'You are a Content Strategist.',            search: null },
+        };
+
+        // Resolve base config — DB first, filesystem fallback
+        let baseDirective, baseSystemPrompt, baseSearchTemplate, baseResponseFormat, baseProvider, baseModel;
+        if (agentConfig) {
+            baseDirective       = agentConfig.directive_template;
+            baseSystemPrompt    = agentConfig.system_prompt;
+            baseSearchTemplate  = agentConfig.search_query_template;
+            baseResponseFormat  = agentConfig.response_format || 'json_object';
+            baseProvider        = agentConfig.ai_provider;
+            baseModel           = agentConfig.ai_model;
+            console.log(`[AGENT-RUN] Using DB config for agent ${aid}`);
+        } else {
+            const fc = FILESYSTEM_CONFIGS[aid];
+            if (!fc) throw new Error(`No configuration found for agent ${aid}.`);
+            baseDirective       = fs.readFileSync(path.join(__dirname, '../../directives', fc.file), 'utf-8');
+            baseSystemPrompt    = fc.system;
+            baseSearchTemplate  = fc.search;
+            baseResponseFormat  = 'json_object';
+            baseProvider        = undefined;
+            baseModel           = undefined;
+            console.log(`[AGENT-RUN] No DB config for agent ${aid}, using filesystem fallback`);
+        }
+
+        // --- Always fetch + apply user overrides (works for both DB and filesystem paths) ---
+        const { data: savedOverride } = await supabase
+            .from('user_agent_overrides')
+            .select('overrides')
+            .eq('user_id', user.id)
+            .eq('agent_id', aid)
+            .maybeSingle();
+
+        const dbOverrides = savedOverride?.overrides || {};
+        const merged = { ...dbOverrides, ...(user_overrides || {}) };
+
+        const effectiveSystemPrompt = merged.system_prompt || baseSystemPrompt;
+
+        // Smart directive building:
+        // Plain-text custom instructions → prepend company context + append output schema from base directive
+        let effectiveDirective;
+        const userDirective = merged.directive_template;
+        if (userDirective) {
+            const hasOutputFormat = userDirective.includes('OUTPUT FORMAT') || userDirective.includes('REQUIRED JSON FORMAT') || userDirective.includes('JSON FORMAT') || userDirective.includes('"industry"') || userDirective.includes('"icp_');
+            if (hasOutputFormat) {
+                // Power user — they included a full schema, use as-is
+                effectiveDirective = userDirective;
+            } else {
+                // Plain text — inject company context header + append output schema from base directive
+                const companyContext = `COMPANY: {{COMPANY_NAME}}\nWEBSITE: {{WEBSITE_URL}}\nINDUSTRY: {{INDUSTRY}}\nBRAND CONTEXT: {{BRAND_CONTEXT}}\nRESEARCH DATA: {{RESEARCH_DATA}}`;
+                const schemaMarkers = ['OUTPUT FORMAT', 'REQUIRED JSON FORMAT', 'JSON FORMAT', 'OUTPUT SCHEMA'];
+                let schemaMarker = -1;
+                for (const marker of schemaMarkers) {
+                    const idx = baseDirective.indexOf(marker);
+                    if (idx !== -1) { schemaMarker = idx; break; }
+                }
+                const outputSchema = schemaMarker !== -1 ? baseDirective.substring(schemaMarker) : '';
+                effectiveDirective = outputSchema
+                    ? `${companyContext}\n\n${userDirective}\n\n---\n\n${outputSchema}`
+                    : `${companyContext}\n\n${userDirective}`;
+                console.log(`[AGENT-RUN] Plain text prompt — injected company context + appended output schema`);
+            }
+        } else {
+            effectiveDirective = baseDirective;
+        }
+
+        const effectiveProvider = (merged.ai_provider && merged.ai_provider !== 'auto')
+            ? merged.ai_provider
+            : (baseProvider && baseProvider !== 'auto' ? baseProvider : undefined);
+        const effectiveModel = merged.ai_model || baseModel || undefined;
+
+        console.log(`[AGENT-RUN] Executing agent ${aid}${Object.keys(merged).length ? ' + user overrides' : ''} for ${company.name}`);
+
+        // Run web search
+        let searchData = '';
+        if (baseSearchTemplate) {
+            let searchQuery = baseSearchTemplate;
+            for (const [key, value] of Object.entries(variables)) {
+                searchQuery = searchQuery.replaceAll(`{{${key}}}`, value);
+            }
+            searchData = await webSearch(searchQuery);
+        }
+        variables.RESEARCH_DATA = searchData || 'No search results available.';
+
+        // Replace all {{VAR}} placeholders
+        let prompt = effectiveDirective;
+        for (const [key, value] of Object.entries(variables)) {
+            prompt = prompt.replaceAll(`{{${key}}}`, value);
+        }
+
+        result = await generateCompletion(
+            effectiveSystemPrompt,
+            prompt,
+            baseResponseFormat,
+            { provider: effectiveProvider, model: effectiveModel }
+        );
 
         res.json({ success: true, result });
     } catch (error) {
