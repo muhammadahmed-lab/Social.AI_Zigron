@@ -143,7 +143,30 @@ const runAgent = async (req, res) => {
             const merged = { ...dbOverrides, ...(user_overrides || {}) };
 
             const effectiveSystemPrompt = merged.system_prompt || agentConfig.system_prompt;
-            const effectiveDirective = merged.directive_template || agentConfig.directive_template;
+
+            // Smart directive building:
+            // If user wrote plain-text custom instructions (no OUTPUT FORMAT / JSON schema),
+            // auto-append the admin's OUTPUT FORMAT section so the output is always valid JSON.
+            let effectiveDirective;
+            const userDirective = merged.directive_template;
+            if (userDirective) {
+                const hasOutputFormat = userDirective.includes('OUTPUT FORMAT') || userDirective.includes('"industry"') || userDirective.includes('"icp_');
+                if (hasOutputFormat) {
+                    // Power user — they included full schema, use as-is
+                    effectiveDirective = userDirective;
+                } else {
+                    // Plain text instructions — append admin's output schema automatically
+                    const adminDirective = agentConfig.directive_template || '';
+                    const schemaMarker = adminDirective.indexOf('OUTPUT FORMAT');
+                    const outputSchema = schemaMarker !== -1 ? adminDirective.substring(schemaMarker) : '';
+                    effectiveDirective = outputSchema
+                        ? `${userDirective}\n\n---\n\n${outputSchema}`
+                        : userDirective;
+                    console.log(`[AGENT-RUN] Plain text instructions detected — auto-appended output schema`);
+                }
+            } else {
+                effectiveDirective = agentConfig.directive_template;
+            }
             const effectiveProvider = (merged.ai_provider && merged.ai_provider !== 'auto')
                 ? merged.ai_provider
                 : (agentConfig.ai_provider !== 'auto' ? agentConfig.ai_provider : undefined);

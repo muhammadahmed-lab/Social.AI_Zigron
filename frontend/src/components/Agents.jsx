@@ -348,15 +348,15 @@ const Agents = () => {
                                     />
                                 </div>
 
-                                {/* Directive Template */}
+                                {/* Custom Instructions */}
                                 <div className="settings-section">
-                                    <h3>Directive Template</h3>
-                                    <p className="settings-hint">Use {'{{VARIABLE_NAME}}'} for dynamic values (e.g. {'{{COMPANY_NAME}}'}, {'{{WEBSITE_URL}}'})</p>
+                                    <h3>Custom Instructions</h3>
+                                    <p className="settings-hint">Write your instructions in plain text — focus on tone, methodology, or audience. The JSON output format is handled automatically.</p>
                                     <textarea
                                         className="settings-textarea settings-textarea-lg"
                                         value={getEffective(settingsAgentId, 'directive_template')}
                                         onChange={(e) => setOverride(settingsAgentId, 'directive_template', e.target.value)}
-                                        placeholder="Directive template..."
+                                        placeholder="e.g. Focus on B2C consumers only. Use the StoryBrand framework. Emphasize emotional pain points over demographics..."
                                     />
                                 </div>
 
