@@ -14,14 +14,24 @@ const CustomerProfile = () => {
     const [localProblemsData, setLocalProblemsData] = useState(null);
     const [syncStatus, setSyncStatus] = useState('synced'); // 'synced', 'syncing', 'error'
     const [isEditMode, setIsEditMode] = useState(true); // Toggle between view and edit modes
+    const [activeIcpIdx, setActiveIcpIdx] = useState(0); // Which ICP tab is selected
+    const [activeProblemsIcpIdx, setActiveProblemsIcpIdx] = useState(0); // Which ICP's problems are shown
 
     const analysisData = localAnalysisData;
     const problemsData = localProblemsData;
 
     // Load data from activeCompany when it changes
+    // Normalize old single-ICP format to new multi-ICP format for backward compatibility
     React.useEffect(() => {
         if (activeCompany?.icp_data) {
-            setLocalAnalysisData(JSON.parse(JSON.stringify(activeCompany.icp_data)));
+            const data = JSON.parse(JSON.stringify(activeCompany.icp_data));
+            // Old format: { icp_profile: {...} } → wrap in icp_profiles array
+            if (data.icp_profile && !data.icp_profiles) {
+                data.icp_profiles = [{ icp_name: 'Primary ICP', icp_description: '', ...data.icp_profile }];
+                delete data.icp_profile;
+            }
+            setLocalAnalysisData(data);
+            setActiveIcpIdx(0);
         } else {
             setLocalAnalysisData(null);
         }
@@ -29,7 +39,14 @@ const CustomerProfile = () => {
 
     React.useEffect(() => {
         if (activeCompany?.icp_problems) {
-            setLocalProblemsData(JSON.parse(JSON.stringify(activeCompany.icp_problems)));
+            const data = JSON.parse(JSON.stringify(activeCompany.icp_problems));
+            // Old format: { icp_problems: [...] } → wrap in icp_problems_by_profile
+            if (data.icp_problems && !data.icp_problems_by_profile) {
+                data.icp_problems_by_profile = [{ icp_name: 'All ICPs', problems: data.icp_problems }];
+                delete data.icp_problems;
+            }
+            setLocalProblemsData(data);
+            setActiveProblemsIcpIdx(0);
         } else {
             setLocalProblemsData(null);
         }
@@ -97,88 +114,77 @@ const CustomerProfile = () => {
         }
     };
 
-    // Helper: Update analysis nested field
-    const updateAnalysis = (path, value) => {
-        const updated = { ...localAnalysisData };
+    // Current ICP profile being viewed/edited
+    const currentIcp = localAnalysisData?.icp_profiles?.[activeIcpIdx] || null;
+
+    // Helper: Update a field in the active ICP profile
+    const updateIcpField = (path, value) => {
+        const updated = JSON.parse(JSON.stringify(localAnalysisData));
+        const icp = updated.icp_profiles[activeIcpIdx];
         const keys = path.split('.');
-        let current = updated;
-        for (let i = 0; i < keys.length - 1; i++) {
-            current = current[keys[i]];
-        }
-        current[keys[keys.length - 1]] = value;
+        let cur = icp;
+        for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
+        cur[keys[keys.length - 1]] = value;
         setLocalAnalysisData(updated);
     };
 
-    // Helper: Update array in analysis
-    const updateAnalysisArray = (path, newArray) => {
-        updateAnalysis(path, newArray);
-    };
+    const updateIcpArray = (path, newArray) => updateIcpField(path, newArray);
 
-    // Helper: Add item to array
-    const addToArray = (path, newItem) => {
-        const updated = { ...localAnalysisData };
+    const addToIcpArray = (path, newItem) => {
+        const updated = JSON.parse(JSON.stringify(localAnalysisData));
+        const icp = updated.icp_profiles[activeIcpIdx];
         const keys = path.split('.');
-        let current = updated;
-        for (let i = 0; i < keys.length - 1; i++) {
-            current = current[keys[i]];
-        }
-        const arr = current[keys[keys.length - 1]] || [];
-        current[keys[keys.length - 1]] = [...arr, newItem];
+        let cur = icp;
+        for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
+        cur[keys[keys.length - 1]] = [...(cur[keys[keys.length - 1]] || []), newItem];
         setLocalAnalysisData(updated);
     };
 
-    // Helper: Remove item from array
-    const removeFromArray = (path, index) => {
-        const updated = { ...localAnalysisData };
+    const removeFromIcpArray = (path, index) => {
+        const updated = JSON.parse(JSON.stringify(localAnalysisData));
+        const icp = updated.icp_profiles[activeIcpIdx];
         const keys = path.split('.');
-        let current = updated;
-        for (let i = 0; i < keys.length - 1; i++) {
-            current = current[keys[i]];
-        }
-        const arr = [...current[keys[keys.length - 1]]];
-        arr.splice(index, 1);
-        current[keys[keys.length - 1]] = arr;
+        let cur = icp;
+        for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
+        cur[keys[keys.length - 1]].splice(index, 1);
         setLocalAnalysisData(updated);
     };
 
-    // Helper: Update problem field
-    const updateProblem = (index, field, value) => {
-        const updated = { ...localProblemsData };
-        updated.icp_problems[index][field] = value;
+    // Current ICP's problems
+    const currentIcpProblems = localProblemsData?.icp_problems_by_profile?.[activeProblemsIcpIdx]?.problems || [];
+
+    // Helper: Update a problem field in the active ICP's problems
+    const updateProblem = (probIdx, field, value) => {
+        const updated = JSON.parse(JSON.stringify(localProblemsData));
+        updated.icp_problems_by_profile[activeProblemsIcpIdx].problems[probIdx][field] = value;
         setLocalProblemsData(updated);
     };
 
-    // Helper: Update problem array field
-    const updateProblemArray = (index, field, newArray) => {
-        const updated = { ...localProblemsData };
-        updated.icp_problems[index][field] = newArray;
+    const updateProblemArray = (probIdx, field, newArray) => {
+        const updated = JSON.parse(JSON.stringify(localProblemsData));
+        updated.icp_problems_by_profile[activeProblemsIcpIdx].problems[probIdx][field] = newArray;
         setLocalProblemsData(updated);
     };
 
-    // Helper: Add new problem card
     const addProblemCard = () => {
-        const updated = { ...localProblemsData };
-        const newProblem = {
-            rank: (updated.icp_problems?.length || 0) + 1,
+        const updated = JSON.parse(JSON.stringify(localProblemsData));
+        const problems = updated.icp_problems_by_profile[activeProblemsIcpIdx].problems;
+        problems.push({
+            rank: problems.length + 1,
             severity: 'Medium',
             problem: 'New Problem',
             description: 'Describe the problem here...',
             affected_segments: [],
             content_opportunity: 'Strategy hook for this problem...'
-        };
-        updated.icp_problems = [...(updated.icp_problems || []), newProblem];
+        });
         setLocalProblemsData(updated);
     };
 
-    // Helper: Delete problem card
-    const deleteProblemCard = (index) => {
+    const deleteProblemCard = (probIdx) => {
         if (!window.confirm('Delete this problem card?')) return;
-        const updated = { ...localProblemsData };
-        updated.icp_problems.splice(index, 1);
-        // Renumber remaining problems
-        updated.icp_problems.forEach((prob, i) => {
-            prob.rank = i + 1;
-        });
+        const updated = JSON.parse(JSON.stringify(localProblemsData));
+        updated.icp_problems_by_profile[activeProblemsIcpIdx].problems.splice(probIdx, 1);
+        updated.icp_problems_by_profile[activeProblemsIcpIdx].problems.forEach((p, i) => { p.rank = i + 1; });
         setLocalProblemsData(updated);
     };
 
@@ -293,24 +299,53 @@ const CustomerProfile = () => {
             <div className="icp-report-layout">
                 {activeTab === 'analysis' && analysisData && (
                     <div className="analysis-section animate-in">
-                        {/* 1. Executive Summary - EDITABLE */}
+                        {/* 1. Executive Summary */}
                         <div className="icp-full-card glass-card landscape-card">
                             <div className="section-header">
                                 <div className="section-title">Strategic Landscape</div>
                                 <input
                                     className="industry-badge-input"
                                     value={analysisData.industry || ''}
-                                    onChange={(e) => updateAnalysis('industry', e.target.value)}
+                                    onChange={(e) => {
+                                        const updated = { ...localAnalysisData, industry: e.target.value };
+                                        setLocalAnalysisData(updated);
+                                    }}
                                     placeholder="Industry"
                                 />
                             </div>
                             <textarea
                                 className="summary-text-editable"
                                 value={analysisData.company_description || ''}
-                                onChange={(e) => updateAnalysis('company_description', e.target.value)}
+                                onChange={(e) => {
+                                    const updated = { ...localAnalysisData, company_description: e.target.value };
+                                    setLocalAnalysisData(updated);
+                                }}
                                 placeholder="Company description..."
                             />
                         </div>
+
+                        {/* ICP Profile Tabs */}
+                        {(analysisData.icp_profiles?.length > 1) && (
+                            <div className="icp-tabs-row">
+                                {analysisData.icp_profiles.map((icp, i) => (
+                                    <button
+                                        key={i}
+                                        className={`icp-tab-btn ${activeIcpIdx === i ? 'active' : ''}`}
+                                        onClick={() => setActiveIcpIdx(i)}
+                                    >
+                                        <span className="icp-tab-num">{i + 1}</span>
+                                        {icp.icp_name || `ICP ${i + 1}`}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* ICP Description */}
+                        {currentIcp?.icp_description && (
+                            <div className="icp-persona-description glass-card">
+                                <strong>{currentIcp.icp_name}</strong> — {currentIcp.icp_description}
+                            </div>
+                        )}
 
                         <div className="icp-grid">
                             {/* 2. Demographic Persona - EDITABLE */}
@@ -323,32 +358,32 @@ const CustomerProfile = () => {
                                     <div className="detail-item-box">
                                         <label>Age Profile</label>
                                         <input
-                                            value={analysisData.icp_profile?.demographics?.age_range || ''}
-                                            onChange={(e) => updateAnalysis('icp_profile.demographics.age_range', e.target.value)}
+                                            value={currentIcp?.demographics?.age_range || ''}
+                                            onChange={(e) => updateIcpField('demographics.age_range', e.target.value)}
                                             placeholder="e.g., 25-45"
                                         />
                                     </div>
                                     <div className="detail-item-box">
                                         <label>Gender</label>
                                         <input
-                                            value={analysisData.icp_profile?.demographics?.gender || ''}
-                                            onChange={(e) => updateAnalysis('icp_profile.demographics.gender', e.target.value)}
+                                            value={currentIcp?.demographics?.gender || ''}
+                                            onChange={(e) => updateIcpField('demographics.gender', e.target.value)}
                                             placeholder="e.g., All"
                                         />
                                     </div>
                                     <div className="detail-item-box">
                                         <label>Geo Context</label>
                                         <input
-                                            value={analysisData.icp_profile?.demographics?.location || ''}
-                                            onChange={(e) => updateAnalysis('icp_profile.demographics.location', e.target.value)}
+                                            value={currentIcp?.demographics?.location || ''}
+                                            onChange={(e) => updateIcpField('demographics.location', e.target.value)}
                                             placeholder="e.g., Urban USA"
                                         />
                                     </div>
                                     <div className="detail-item-box">
                                         <label>Economic Tier</label>
                                         <input
-                                            value={analysisData.icp_profile?.demographics?.income_level || ''}
-                                            onChange={(e) => updateAnalysis('icp_profile.demographics.income_level', e.target.value)}
+                                            value={currentIcp?.demographics?.income_level || ''}
+                                            onChange={(e) => updateIcpField('demographics.income_level', e.target.value)}
                                             placeholder="e.g., $75k+"
                                         />
                                     </div>
@@ -364,22 +399,22 @@ const CustomerProfile = () => {
                                 <div className="profile-segment">
                                     <label className="sub-label">Target Authorities</label>
                                     <div className="tag-cloud">
-                                        {(analysisData.icp_profile?.job_titles || []).map((title, i) => (
+                                        {(currentIcp?.job_titles || []).map((title, i) => (
                                             <span key={i} className="tag cyan-glow editable-tag">
                                                 <input
                                                     value={title}
                                                     onChange={(e) => {
-                                                        const arr = [...analysisData.icp_profile.job_titles];
+                                                        const arr = [...(currentIcp.job_titles || [])];
                                                         arr[i] = e.target.value;
-                                                        updateAnalysisArray('icp_profile.job_titles', arr);
+                                                        updateIcpArray('job_titles', arr);
                                                     }}
                                                 />
-                                                <button onClick={() => removeFromArray('icp_profile.job_titles', i)}>×</button>
+                                                <button onClick={() => removeFromIcpArray('job_titles', i)}>×</button>
                                             </span>
                                         ))}
                                         <button
                                             className="add-tag-btn"
-                                            onClick={() => addToArray('icp_profile.job_titles', 'New Title')}
+                                            onClick={() => addToIcpArray('job_titles', 'New Title')}
                                         >+ Add</button>
                                     </div>
                                 </div>
@@ -388,8 +423,8 @@ const CustomerProfile = () => {
                                     <div className="value-strip">
                                         <strong>Company Size:</strong>
                                         <input
-                                            value={analysisData.icp_profile?.company_size || ''}
-                                            onChange={(e) => updateAnalysis('icp_profile.company_size', e.target.value)}
+                                            value={currentIcp?.company_size || ''}
+                                            onChange={(e) => updateIcpField('company_size', e.target.value)}
                                             placeholder="e.g., 50-500"
                                         />
                                     </div>
@@ -406,31 +441,31 @@ const CustomerProfile = () => {
                                     <label className="sub-label">Modern Lifestyle</label>
                                     <textarea
                                         className="narrative-text-editable"
-                                        value={analysisData.icp_profile?.psychographics?.lifestyle || ''}
-                                        onChange={(e) => updateAnalysis('icp_profile.psychographics.lifestyle', e.target.value)}
+                                        value={currentIcp?.psychographics?.lifestyle || ''}
+                                        onChange={(e) => updateIcpField('psychographics.lifestyle', e.target.value)}
                                         placeholder="Describe lifestyle..."
                                     />
                                 </div>
-                                {analysisData.icp_profile?.psychographics?.values && (
+                                {currentIcp?.psychographics?.values && (
                                     <div className="profile-segment mt-med">
                                         <label className="sub-label">Shared Values</label>
                                         <div className="tag-cloud mini">
-                                            {analysisData.icp_profile.psychographics.values.map((val, i) => (
+                                            {(currentIcp?.psychographics?.values || []).map((val, i) => (
                                                 <span key={i} className="tag emerald-outline editable-tag">
                                                     <input
                                                         value={val}
                                                         onChange={(e) => {
-                                                            const arr = [...analysisData.icp_profile.psychographics.values];
+                                                            const arr = [...(currentIcp.psychographics.values || [])];
                                                             arr[i] = e.target.value;
-                                                            updateAnalysisArray('icp_profile.psychographics.values', arr);
+                                                            updateIcpArray('psychographics.values', arr);
                                                         }}
                                                     />
-                                                    <button onClick={() => removeFromArray('icp_profile.psychographics.values', i)}>×</button>
+                                                    <button onClick={() => removeFromIcpArray('psychographics.values', i)}>×</button>
                                                 </span>
                                             ))}
                                             <button
                                                 className="add-tag-btn"
-                                                onClick={() => addToArray('icp_profile.psychographics.values', 'New Value')}
+                                                onClick={() => addToIcpArray('psychographics.values', 'New Value')}
                                             >+ Add</button>
                                         </div>
                                     </div>
@@ -438,22 +473,22 @@ const CustomerProfile = () => {
                                 <div className="profile-segment mt-med">
                                     <label className="sub-label">Strategic Interests</label>
                                     <div className="tag-cloud">
-                                        {(analysisData.icp_profile?.psychographics?.interests || []).map((int, i) => (
+                                        {(currentIcp?.psychographics?.interests || []).map((int, i) => (
                                             <span key={i} className="tag emerald-glow editable-tag">
                                                 <input
                                                     value={int}
                                                     onChange={(e) => {
-                                                        const arr = [...analysisData.icp_profile.psychographics.interests];
+                                                        const arr = [...(currentIcp.psychographics.interests || [])];
                                                         arr[i] = e.target.value;
-                                                        updateAnalysisArray('icp_profile.psychographics.interests', arr);
+                                                        updateIcpArray('psychographics.interests', arr);
                                                     }}
                                                 />
-                                                <button onClick={() => removeFromArray('icp_profile.psychographics.interests', i)}>×</button>
+                                                <button onClick={() => removeFromIcpArray('psychographics.interests', i)}>×</button>
                                             </span>
                                         ))}
                                         <button
                                             className="add-tag-btn"
-                                            onClick={() => addToArray('icp_profile.psychographics.interests', 'New Interest')}
+                                            onClick={() => addToIcpArray('psychographics.interests', 'New Interest')}
                                         >+ Add</button>
                                     </div>
                                 </div>
@@ -467,45 +502,45 @@ const CustomerProfile = () => {
                                 </div>
                                 <div className="profile-segment">
                                     <ul className="detailed-list accent-amber editable-list">
-                                        {(analysisData.icp_profile?.goals || []).map((goal, i) => (
+                                        {(currentIcp?.goals || []).map((goal, i) => (
                                             <li key={i}>
                                                 <textarea
                                                     value={goal}
                                                     onChange={(e) => {
-                                                        const arr = [...analysisData.icp_profile.goals];
+                                                        const arr = [...(currentIcp.goals || [])];
                                                         arr[i] = e.target.value;
-                                                        updateAnalysisArray('icp_profile.goals', arr);
+                                                        updateIcpArray('goals', arr);
                                                     }}
                                                 />
-                                                <button onClick={() => removeFromArray('icp_profile.goals', i)}>×</button>
+                                                <button onClick={() => removeFromIcpArray('goals', i)}>×</button>
                                             </li>
                                         ))}
                                         <button
                                             className="add-list-btn"
-                                            onClick={() => addToArray('icp_profile.goals', 'New goal')}
+                                            onClick={() => addToIcpArray('goals', 'New goal')}
                                         >+ Add Goal</button>
                                     </ul>
                                 </div>
-                                {analysisData.icp_profile?.challenges_preview && (
+                                {currentIcp?.challenges_preview && (
                                     <div className="profile-segment mt-large border-top-dash">
                                         <label className="sub-label amber-text">Primary Friction Points</label>
                                         <ul className="simple-check-list editable-list">
-                                            {analysisData.icp_profile.challenges_preview.map((ch, i) => (
+                                            {(currentIcp?.challenges_preview || []).map((ch, i) => (
                                                 <li key={i}>
                                                     <input
                                                         value={ch}
                                                         onChange={(e) => {
-                                                            const arr = [...analysisData.icp_profile.challenges_preview];
+                                                            const arr = [...(currentIcp.challenges_preview || [])];
                                                             arr[i] = e.target.value;
-                                                            updateAnalysisArray('icp_profile.challenges_preview', arr);
+                                                            updateIcpArray('challenges_preview', arr);
                                                         }}
                                                     />
-                                                    <button onClick={() => removeFromArray('icp_profile.challenges_preview', i)}>×</button>
+                                                    <button onClick={() => removeFromIcpArray('challenges_preview', i)}>×</button>
                                                 </li>
                                             ))}
                                             <button
                                                 className="add-list-btn"
-                                                onClick={() => addToArray('icp_profile.challenges_preview', 'New challenge')}
+                                                onClick={() => addToIcpArray('challenges_preview', 'New challenge')}
                                             >+ Add</button>
                                         </ul>
                                     </div>
@@ -524,8 +559,23 @@ const CustomerProfile = () => {
                             </div>
                         ) : (
                             <div className="problems-layout-container">
+                                {/* ICP selector tabs for problems */}
+                                {(problemsData.icp_problems_by_profile?.length > 1) && (
+                                    <div className="icp-tabs-row">
+                                        {problemsData.icp_problems_by_profile.map((group, i) => (
+                                            <button
+                                                key={i}
+                                                className={`icp-tab-btn ${activeProblemsIcpIdx === i ? 'active' : ''}`}
+                                                onClick={() => setActiveProblemsIcpIdx(i)}
+                                            >
+                                                <span className="icp-tab-num">{i + 1}</span>
+                                                {group.icp_name || `ICP ${i + 1}`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                                 <div className="problems-main-grid">
-                                    {(problemsData.icp_problems || []).map((prob, i) => (
+                                    {currentIcpProblems.map((prob, i) => (
                                         <div key={i} className={`icp-card problem-detail-card glass-card severity-${prob.severity?.toLowerCase() || 'high'}`}>
                                             <div className="card-top-header">
                                                 <div className="problem-indexer">Problem 0{prob.rank}</div>

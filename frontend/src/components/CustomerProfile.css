@@ -2,6 +2,65 @@
    CustomerProfile - Enhanced Premium Dashboard
    =========================================== */
 
+/* ICP Profile Tabs (multi-ICP selector) */
+.icp-tabs-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.icp-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.6);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.icp-tab-btn:hover {
+    background: rgba(102,126,234,0.15);
+    color: #fff;
+    border-color: rgba(102,126,234,0.4);
+}
+
+.icp-tab-btn.active {
+    background: linear-gradient(135deg, rgba(102,126,234,0.3), rgba(118,75,162,0.3));
+    border-color: rgba(102,126,234,0.6);
+    color: #fff;
+    font-weight: 600;
+}
+
+.icp-tab-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(102,126,234,0.4);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+/* ICP Persona Description Banner */
+.icp-persona-description {
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.8);
+    margin-bottom: 1.25rem;
+    border-left: 3px solid #667eea;
+    background: rgba(102,126,234,0.08);
+}
+
 .icp-container {
     padding: 2.5rem 4rem;
     height: 100vh;
