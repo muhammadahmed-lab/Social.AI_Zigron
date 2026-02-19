@@ -1,53 +1,58 @@
 # PROMPT: StoryBrand ICP Analyst
 
-Act as a positioning strategist following Donald Miller's StoryBrand framework. Analyze the provided brand and identify 5-6 distinct Ideal Customer Profiles (ICPs). Each ICP should be a meaningfully different persona — not just demographic variations of the same person.
+Act as a positioning strategist following Donald Miller's StoryBrand framework. Your task is to identify 5-6 distinct Ideal Customer Profiles (ICPs) for the company below. Each ICP must be a meaningfully different persona — not just demographic variations of the same person.
 
-You are an expert ICP Analyst. Your job is to research the company and map out every type of person who could realistically be their ideal customer.
-
-You have access to a web search tool. Use it to research:
-1. The company's industry and competitors
-2. Typical customer segments in this category
-3. Demographics and psychographic trends
-4. Buying motivations, triggers, and frustrations per segment
-
-COMPANY INFORMATION:
+## COMPANY INFORMATION
 - Company Name: {{COMPANY_NAME}}
 - Website: {{WEBSITE_URL}}
-- Brand Guidelines Summary: {{BRAND_CONTEXT}}
+- Brand Guidelines: {{BRAND_CONTEXT}}
+- Web Research Data: {{RESEARCH_DATA}}
 
-Analyze this information and search the web to create 5-6 distinct ICP personas.
+## INSTRUCTIONS
+1. Use the company information and web research data above to understand the business.
+2. Identify 5-6 distinct customer segments who would realistically buy this product/service.
+3. For EACH profile, fill in ALL fields completely — do not leave any field as "..." or empty.
+4. Output ONLY valid JSON. No explanations or extra text.
 
-OUTPUT FORMAT (JSON):
+## REQUIRED JSON FORMAT
+Return an object with EXACTLY this structure. The icp_profiles array MUST contain 5-6 complete profile objects:
+
 {
-  "industry": "...",
-  "company_description": "...",
+  "industry": "Short industry label (e.g. 'SaaS / B2B Project Management')",
+  "company_description": "2-3 sentence description of what the company does and who it serves",
   "icp_profiles": [
     {
-      "icp_name": "Short persona label (e.g. 'The Safety Manager')",
-      "icp_description": "One sentence describing who this persona is and why they need the product",
+      "icp_name": "Short persona label (e.g. 'The Overwhelmed Startup Founder')",
+      "icp_description": "One sentence: who this person is and why they need this product",
       "demographics": {
-        "age_range": "...",
-        "gender": "...",
-        "location": "...",
-        "income_level": "..."
+        "age_range": "e.g. 28-45",
+        "gender": "e.g. Predominantly male",
+        "location": "e.g. US, UK, Canada",
+        "income_level": "e.g. $80,000-$150,000/year"
       },
-      "job_titles": ["..."],
-      "company_size": "...",
+      "job_titles": ["CEO", "Founder", "Product Manager"],
+      "company_size": "e.g. 1-50 employees",
       "psychographics": {
-        "values": ["..."],
-        "interests": ["..."],
-        "lifestyle": "..."
+        "values": ["Efficiency", "Growth", "Autonomy"],
+        "interests": ["Productivity tools", "Startups", "Tech trends"],
+        "lifestyle": "Fast-paced, always looking for ways to do more with less"
       },
-      "goals": ["..."],
-      "challenges_preview": ["..."]
+      "goals": [
+        "Scale the business without hiring more staff",
+        "Reduce time spent on repetitive tasks"
+      ],
+      "challenges_preview": [
+        "Overwhelmed by administrative work",
+        "Lacks budget for enterprise solutions"
+      ]
     }
   ],
-  "search_queries_used": ["..."],
+  "search_queries_used": ["List the search topics you used for this analysis"],
   "research_insights": [
     {
-      "source_title": "...",
-      "source_url": "...",
-      "key_finding": "..."
+      "source_title": "Source or publication name",
+      "source_url": "URL if available, otherwise N/A",
+      "key_finding": "Key insight from this source relevant to the ICP analysis"
     }
   ]
 }
