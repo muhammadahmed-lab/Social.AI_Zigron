@@ -20,6 +20,16 @@ const PreviewModal = ({
 
     const config = agentConfig[agentId] || { title: 'Results', icon: 'check', accent: '#10b981' };
 
+    // Normalize Agent 1: new format has icp_profiles[], old format had icp_profile{}
+    const firstIcp = data?.icp_profiles?.[0] || data?.icp_profile || null;
+    const icpCount = data?.icp_profiles?.length || (data?.icp_profile ? 1 : 0);
+
+    // Normalize Agent 2: new format has icp_problems_by_profile[], old format had icp_problems[]
+    const allProblems = data?.icp_problems_by_profile
+        ? data.icp_problems_by_profile.flatMap(g => g.problems || [])
+        : (data?.icp_problems || []);
+    const icpGroupCount = data?.icp_problems_by_profile?.length || 0;
+
     return (
         <div className="pm-overlay" onClick={onClose}>
             <div className="pm-modal" onClick={e => e.stopPropagation()}>
@@ -68,46 +78,53 @@ const PreviewModal = ({
                             <div className="pm-industry-tag">{data.industry}</div>
                         )}
 
+                        {icpCount > 0 && (
+                            <div className="pm-insight-badge" style={{ marginBottom: '0.75rem' }}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <span>{icpCount} ICP {icpCount === 1 ? 'Persona' : 'Personas'} Generated — {firstIcp?.icp_name || 'Preview of first profile'}</span>
+                            </div>
+                        )}
+
                         <div className="pm-stat-row">
                             <div className="pm-stat-card">
                                 <div className="pm-stat-icon">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg>
                                 </div>
                                 <span className="pm-stat-label">Age Range</span>
-                                <span className="pm-stat-value">{data.icp_profile?.demographics?.age_range || 'N/A'}</span>
+                                <span className="pm-stat-value">{firstIcp?.demographics?.age_range || 'N/A'}</span>
                             </div>
                             <div className="pm-stat-card">
                                 <div className="pm-stat-icon">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
                                 </div>
                                 <span className="pm-stat-label">Location</span>
-                                <span className="pm-stat-value">{data.icp_profile?.demographics?.location || 'N/A'}</span>
+                                <span className="pm-stat-value">{firstIcp?.demographics?.location || 'N/A'}</span>
                             </div>
                             <div className="pm-stat-card">
                                 <div className="pm-stat-icon">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></svg>
                                 </div>
                                 <span className="pm-stat-label">Income</span>
-                                <span className="pm-stat-value">{data.icp_profile?.demographics?.income_level || 'N/A'}</span>
+                                <span className="pm-stat-value">{firstIcp?.demographics?.income_level || 'N/A'}</span>
                             </div>
                         </div>
 
-                        {data.icp_profile?.goals?.[0] && (
+                        {firstIcp?.goals?.[0] && (
                             <div className="pm-highlight-card green">
                                 <div className="pm-highlight-label">Primary Goal</div>
-                                <p>{data.icp_profile.goals[0]}</p>
+                                <p>{firstIcp.goals[0]}</p>
                             </div>
                         )}
 
-                        {data.icp_profile?.job_titles?.length > 0 && (
+                        {firstIcp?.job_titles?.length > 0 && (
                             <div className="pm-tags-section">
                                 <span className="pm-tags-label">Target Roles</span>
                                 <div className="pm-tags">
-                                    {data.icp_profile.job_titles.slice(0, 4).map((t, i) => (
+                                    {firstIcp.job_titles.slice(0, 4).map((t, i) => (
                                         <span key={i} className="pm-tag">{t}</span>
                                     ))}
-                                    {data.icp_profile.job_titles.length > 4 && (
-                                        <span className="pm-tag muted">+{data.icp_profile.job_titles.length - 4} more</span>
+                                    {firstIcp.job_titles.length > 4 && (
+                                        <span className="pm-tag muted">+{firstIcp.job_titles.length - 4} more</span>
                                     )}
                                 </div>
                             </div>
@@ -126,12 +143,12 @@ const PreviewModal = ({
                 {agentId === 2 && (
                     <div className="pm-body">
                         <div className="pm-problems-count">
-                            <span className="pm-big-number">{data.icp_problems?.length || 0}</span>
-                            <span className="pm-big-label">Problems Found</span>
+                            <span className="pm-big-number">{allProblems.length}</span>
+                            <span className="pm-big-label">Problems Found{icpGroupCount > 0 ? ` across ${icpGroupCount} ICPs` : ''}</span>
                         </div>
 
                         <div className="pm-problem-list">
-                            {(data.icp_problems || []).slice(0, 3).map((prob, i) => (
+                            {allProblems.slice(0, 3).map((prob, i) => (
                                 <div key={i} className="pm-problem-row">
                                     <div className={`pm-severity-dot ${prob.severity?.toLowerCase() || 'high'}`}></div>
                                     <div className="pm-problem-info">
@@ -142,8 +159,8 @@ const PreviewModal = ({
                                     </div>
                                 </div>
                             ))}
-                            {(data.icp_problems?.length || 0) > 3 && (
-                                <div className="pm-more-items">+{data.icp_problems.length - 3} more problems</div>
+                            {allProblems.length > 3 && (
+                                <div className="pm-more-items">+{allProblems.length - 3} more problems</div>
                             )}
                         </div>
 
@@ -158,7 +175,7 @@ const PreviewModal = ({
                             </div>
                         )}
 
-                        {data.icp_problems?.some(p => p.research_evidence) && (
+                        {allProblems.some(p => p.research_evidence) && (
                             <div className="pm-insight-badge amber">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>
                                 <span>Validated with live web research</span>
