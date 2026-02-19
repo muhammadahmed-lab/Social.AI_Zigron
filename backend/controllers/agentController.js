@@ -150,14 +150,20 @@ const runAgent = async (req, res) => {
             let effectiveDirective;
             const userDirective = merged.directive_template;
             if (userDirective) {
-                const hasOutputFormat = userDirective.includes('OUTPUT FORMAT') || userDirective.includes('"industry"') || userDirective.includes('"icp_');
+                const hasOutputFormat = userDirective.includes('OUTPUT FORMAT') || userDirective.includes('REQUIRED JSON FORMAT') || userDirective.includes('JSON FORMAT') || userDirective.includes('"industry"') || userDirective.includes('"icp_');
                 if (hasOutputFormat) {
                     // Power user — they included full schema, use as-is
                     effectiveDirective = userDirective;
                 } else {
                     // Plain text instructions — append admin's output schema automatically
                     const adminDirective = agentConfig.directive_template || '';
-                    const schemaMarker = adminDirective.indexOf('OUTPUT FORMAT');
+                    // Support multiple schema marker styles used across different directives
+                    const schemaMarkers = ['OUTPUT FORMAT', 'REQUIRED JSON FORMAT', 'JSON FORMAT', 'OUTPUT SCHEMA'];
+                    let schemaMarker = -1;
+                    for (const marker of schemaMarkers) {
+                        const idx = adminDirective.indexOf(marker);
+                        if (idx !== -1) { schemaMarker = idx; break; }
+                    }
                     const outputSchema = schemaMarker !== -1 ? adminDirective.substring(schemaMarker) : '';
                     effectiveDirective = outputSchema
                         ? `${userDirective}\n\n---\n\n${outputSchema}`
