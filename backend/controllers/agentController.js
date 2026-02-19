@@ -325,6 +325,13 @@ const resetResults = async (req, res) => {
                 .eq('id', user.active_company_id);
         }
 
+        if (aid === 2) {
+            await supabase
+                .from('companies')
+                .update({ icp_problems: null })
+                .eq('id', user.active_company_id);
+        }
+
         if (aid === 3) {
             await supabase
                 .from('company_calendars')
