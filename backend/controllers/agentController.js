@@ -130,13 +130,24 @@ const runAgent = async (req, res) => {
                 throw new Error(`Agent "${agentConfig.name}" is currently disabled by an administrator.`);
             }
 
-            // --- DB-DRIVEN AGENT EXECUTION (with optional user overrides) ---
-            const effectiveSystemPrompt = user_overrides?.system_prompt || agentConfig.system_prompt;
-            const effectiveDirective = user_overrides?.directive_template || agentConfig.directive_template;
-            const effectiveProvider = (user_overrides?.ai_provider && user_overrides.ai_provider !== 'auto')
-                ? user_overrides.ai_provider
+            // --- Fetch user's saved overrides from DB (takes priority over admin global prompts) ---
+            const { data: savedOverride } = await supabase
+                .from('user_agent_overrides')
+                .select('overrides')
+                .eq('user_id', user.id)
+                .eq('agent_id', aid)
+                .maybeSingle();
+
+            // Merge: request-level overrides > DB saved overrides > admin global config
+            const dbOverrides = savedOverride?.overrides || {};
+            const merged = { ...dbOverrides, ...(user_overrides || {}) };
+
+            const effectiveSystemPrompt = merged.system_prompt || agentConfig.system_prompt;
+            const effectiveDirective = merged.directive_template || agentConfig.directive_template;
+            const effectiveProvider = (merged.ai_provider && merged.ai_provider !== 'auto')
+                ? merged.ai_provider
                 : (agentConfig.ai_provider !== 'auto' ? agentConfig.ai_provider : undefined);
-            const effectiveModel = user_overrides?.ai_model || agentConfig.ai_model || undefined;
+            const effectiveModel = merged.ai_model || agentConfig.ai_model || undefined;
 
             console.log(`[AGENT-RUN] Executing "${agentConfig.name}" (DB config${user_overrides ? ' + user overrides' : ''}) for ${company.name}`);
 
