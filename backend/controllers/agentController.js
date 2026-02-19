@@ -155,7 +155,9 @@ const runAgent = async (req, res) => {
                     // Power user — they included full schema, use as-is
                     effectiveDirective = userDirective;
                 } else {
-                    // Plain text instructions — append admin's output schema automatically
+                    // Plain text instructions — prepend company context + append admin's output schema
+                    // (plain text prompts have no {{VAR}} placeholders, so company info must be injected explicitly)
+                    const companyContext = `COMPANY: {{COMPANY_NAME}}\nWEBSITE: {{WEBSITE_URL}}\nINDUSTRY: {{INDUSTRY}}\nBRAND CONTEXT: {{BRAND_CONTEXT}}\nRESEARCH DATA: {{RESEARCH_DATA}}`;
                     const adminDirective = agentConfig.directive_template || '';
                     // Support multiple schema marker styles used across different directives
                     const schemaMarkers = ['OUTPUT FORMAT', 'REQUIRED JSON FORMAT', 'JSON FORMAT', 'OUTPUT SCHEMA'];
@@ -166,9 +168,9 @@ const runAgent = async (req, res) => {
                     }
                     const outputSchema = schemaMarker !== -1 ? adminDirective.substring(schemaMarker) : '';
                     effectiveDirective = outputSchema
-                        ? `${userDirective}\n\n---\n\n${outputSchema}`
-                        : userDirective;
-                    console.log(`[AGENT-RUN] Plain text instructions detected — auto-appended output schema`);
+                        ? `${companyContext}\n\n${userDirective}\n\n---\n\n${outputSchema}`
+                        : `${companyContext}\n\n${userDirective}`;
+                    console.log(`[AGENT-RUN] Plain text instructions detected — injected company context + appended output schema`);
                 }
             } else {
                 effectiveDirective = agentConfig.directive_template;
